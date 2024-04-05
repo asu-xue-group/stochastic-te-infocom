@@ -54,8 +54,8 @@ def main():
         #     (0, 10): {'cap': 150}
         # }
         # nx.set_edge_attributes(G, weights)
-        print(G[0][10]['cap'])
-        print(G[5][3]['cap'])
+        # print(G[0][10]['cap'])
+        # print(G[5][3]['cap'])
 
 
 if __name__ == '__main__':
