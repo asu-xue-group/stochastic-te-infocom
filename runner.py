@@ -1,9 +1,10 @@
-from typing import List, Any
-
 import matplotlib.pyplot as plt
 import networkx as nx
 import pickle
 import random
+from graphs.ItalyNet import italy_net
+
+from opt_test import solve_lp
 
 
 def L(edge: tuple, path: list, mapping: dict) -> bool:
@@ -15,30 +16,12 @@ def L(edge: tuple, path: list, mapping: dict) -> bool:
 
 def main():
     with open('test.pk', 'rb') as f:
-        G: nx.Graph = pickle.load(f)
+        # G: nx.Graph = pickle.load(f)
+        # G = nx.to_directed(G)
+        G = italy_net()
 
         nx.draw(G, with_labels=True, font_weight='bold')
         plt.show()
-
-        edges = list(G.edges.data())
-
-        k = 5
-        for counter, path in enumerate(nx.shortest_simple_paths(G, source=0, target=12)):
-            print(path)
-            if counter == k-1:
-                break
-
-        paths = list(nx.all_shortest_paths(G, source=0, target=12))
-
-        # Set up the dictionary that stores the edge-path mapping
-        temp = dict()
-        for edge in edges:
-            # Needs to add both forward and backward edges
-            temp[(edge[0], edge[1])] = set()
-            temp[(edge[1], edge[0])] = set()
-        for path in paths:
-            for i in range(len(path) - 2 + 1):
-                temp[tuple(path[i:i+2])].add(tuple(path))
 
         for edge in G.edges:
             if random.random() < 0.5:
@@ -47,19 +30,31 @@ def main():
                 capacity = 200
             nx.set_edge_attributes(G, {edge: {'cap': capacity}})
 
-        weights = {
-            (5, 3): {'cap': 200, 'prob': 0.995},
-            (13, 4): {'cap': 500, 'prob': 1.00},
-            (0, 10): {'cap': 150}
-        }
+        # Commodities
+        commodities = [
+            ((0, 8), 500),
+            ((1, 10), 450),
+            ((4, 13), 300),
+        ]
 
-        commodities = {
-            1: (0, 3, 500),
-            2: (0, 5, 450),
-            3: (1, )
-        }
+        # K-shortest paths for the commodities
+        paths = []
+        k = 3
+        for commodity in commodities:
+            for counter, path in enumerate(nx.shortest_simple_paths(G, source=commodity[0][0],
+                                                                    target=commodity[0][1])):
+                if counter == 0:
+                    paths.append([tuple(path)])
+                else:
+                    paths[-1].append(tuple(path))
+                if counter == k-1:
+                    paths[-1] = tuple(paths[-1])
+                    break
 
-        nx.set_edge_attributes(G, weights)
+        # Shared risk groups
+        srg = [((0, 1), 0.4), ((6, 10), 0.5), ((10, 13), 0.6)]
+
+        solve_lp(commodities, paths, srg, G)
 
 
 if __name__ == '__main__':
