@@ -109,16 +109,16 @@ def solve_lp(commodities: list, paths: list, srg: list, G: DiGraph):
                     rhs += f'W+[{i},{r}] + '
     print(f'({lhs[:-3]}) - ({rhs[:-3]}) = 0')
     # Eq. 41
-    for i in I:
-        for v in set(G.nodes):
-            if v not in commodities[i][0]:
-                m.addConstr(
-                    gp.quicksum(W_plus[i, r] * L(l, paths[i][r], e) for e in G.in_edges(nbunch=v) for r in R) - gp.quicksum(W_plus[i, r] * L(l, paths[i][r], e) for e in G.out_edges(nbunch=v) for r in R ) == 0)
-    # m.addConstrs((gp.quicksum(W_plus[i, r] * L(l, paths[i][r], e) for e in G.in_edges(nbunch=v) for r in R)
-    #              - gp.quicksum(W_plus[i, r] * L(l, paths[i][r], e) for e in G.out_edges(nbunch=v) for r in R ) == 0
-    #             for v in set(G.nodes)
-    #             for i in I
-    #             if v not in commodities[i][0]), name='flow_conservation')
+    # for i in I:
+    #     for v in set(G.nodes):
+    #         if v not in commodities[i][0]:
+                # m.addConstr(
+                #     gp.quicksum(W_plus[i, r] * L(l, paths[i][r], e) for e in G.in_edges(nbunch=v) for r in R) - gp.quicksum(W_plus[i, r] * L(l, paths[i][r], e) for e in G.out_edges(nbunch=v) for r in R ) == 0)
+    m.addConstrs((gp.quicksum(W_plus[i, r] * L(l, paths[i][r], e) for e in G.in_edges(nbunch=v) for r in R)
+                 - gp.quicksum(W_plus[i, r] * L(l, paths[i][r], e) for e in G.out_edges(nbunch=v) for r in R ) == 0
+                for v in set(G.nodes)
+                for i in I
+                if v not in commodities[i][0]), name='flow_conservation')
 
     m.setObjective(delta, GRB.MINIMIZE)
 
