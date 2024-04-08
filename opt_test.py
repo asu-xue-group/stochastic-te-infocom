@@ -1,10 +1,8 @@
-import math
-
 import gurobipy as gp
 import numpy as np
-import itertools
 from gurobipy import *
 from networkx import DiGraph
+import ENV
 
 
 def calculate_l(G: DiGraph, paths: list):
@@ -19,7 +17,7 @@ def calculate_l(G: DiGraph, paths: list):
     for path_grp in paths:
         for path in path_grp:
             for i in range(len(path) - 2 + 1):
-                L[tuple(path[i:i+2])].add(tuple(path))
+                L[tuple(path[i:i + 2])].add(tuple(path))
     return L
 
 
@@ -48,87 +46,79 @@ def calc_pq(z, srg):
 
 
 def solve_lp(commodities: list, paths: list, srg: list, G: DiGraph):
-    # Create a new model
-    m = Model()
+    with gp.Env(params=ENV.connection_params) as env:
+        with gp.Model(env=env) as m:
+            # META VARIABLES
+            num_srg = len(srg)
+            I = range(len(commodities))
+            Q = range(int(math.pow(2, num_srg)))
+            R = range(len(paths[0]))
+            l = calculate_l(G, paths)
+            E = G.edges()
 
-    # META VARIABLES
-    num_srg = len(srg)
-    I = range(len(commodities))
-    Q = range(int(math.pow(2, num_srg)))
-    R = range(len(paths[0]))
-    l = calculate_l(G, paths)
-    E = G.edges()
+            p = np.zeros((len(Q),))
+            for i, z in enumerate([list(i) for i in itertools.product([0, 1], repeat=3)]):
+                p[i] = calc_pq(z, srg)
 
-    # q = np.arange(math.pow(2, num_srg))
+            # CONSTANTS
+            beta = 0.95
 
-    p = np.zeros((len(Q),))
+            # VARIABLES
+            # W^+_i(r)
+            W_plus = m.addVars(I, R, name="W+")
+            # R^{+,q}_i(r)
+            R_plus = m.addVars(I, Q, R, name="R+")
+            delta = m.addVar(name='delta')
+            # alpha_i
+            alpha = m.addVars(I, name='alpha')
+            # phi^q_i
+            phi = m.addVars(I, Q, name='phi')
 
-    for i, z in enumerate([list(i) for i in itertools.product([0, 1], repeat=3)]):
-        p[i] = calc_pq(z, srg)
+            # CONSTRAINTS
+            # commodities = i -> ((s, t), d)
+            # paths = i -> [path1, path2, ...]
+            # srg = [((u, v), fail prob), ...]
+            # Eq. 39
+            m.addConstrs(commodities[i][1] - alpha[i] + (1 / beta) * gp.quicksum(p[q] * phi[i, q] for q in Q) <= delta
+                         for i in I)
 
-    # CONSTANTS
-    beta = 0.95
-    C_e = 450
+            # Eq. 40
+            m.addConstrs(phi[i, q] >= alpha[i] - gp.quicksum(
+                R_plus[i, q, r] *
+                L(l, paths[i][r], e) *
+                y(paths[i][r], q, srg, l)
+                for r in R for e in G.in_edges(nbunch=commodities[i][0][1]))
+                         for i in I
+                         for q in Q)
 
-    # VARIABLES
-    # W^+_i(r)
-    W_plus = m.addVars(I, R, name="W+")
-    # R^{+,q}_i(r)
-    R_plus = m.addVars(I, Q, R, name="R+")
-    delta = m.addVar(name='delta')
-    # alpha_i
-    alpha = m.addVars(I, name='alpha')
-    # phi^q_i
-    phi = m.addVars(I, Q, name='phi')
+            # Eq. 42
+            m.addConstrs(gp.quicksum(W_plus[i, r] for r in R) == commodities[i][1] for i in I)
 
-    # CONSTRAINTS
-    # commodities = i -> ((s, t), d)
-    # paths = i -> [path1, path2, ...]
-    # srg = [((u, v), fail prob), ...]
-    # Eq. 39
-    m.addConstrs(commodities[i][1] - alpha[i] + (1 / beta) * gp.quicksum(p[q] * phi[i, q] for q in Q) <= delta
-                 for i in I)
+            # Eq. 44
+            m.addConstrs(gp.quicksum(W_plus[i, r] *
+                                     L(l, paths[i][r], e)
+                                     for r in R for i in I) <= G[e[0]][e[1]]['cap']
+                         for e in E)
+            # Eq. 45
+            m.addConstrs(gp.quicksum(R_plus[i, q, r] *
+                                     L(l, paths[i][r], e)
+                                     for r in R for i in I) <= G[e[0]][e[1]]['cap']
+                         for q in Q
+                         for e in E)
 
-    # Eq. 40
-    m.addConstrs(phi[i, q] >= alpha[i] - gp.quicksum(
-                            R_plus[i, q, r] *
-                            L(l, paths[i][r], e) *
-                            y(paths[i][r], q, srg, l)
-                            for r in R for e in G.in_edges(nbunch=commodities[i][0][1]))
-                 for i in I
-                 for q in Q)
+            m.setObjective(delta, GRB.MINIMIZE)
+            m.update()
+            m.write('test.lp')
 
-    # Eq. 42
-    m.addConstrs(gp.quicksum(W_plus[i, r] for r in R) == commodities[i][1] for i in I)
+            # Optimize model
+            m.optimize()
 
-    # Eq. 44
-    m.addConstrs(gp.quicksum(W_plus[i, r] *
-                            L(l, paths[i][r], e)
-                            for r in R for i in I) <= C_e
-                 for e in E)
-    # Eq. 45
-    m.addConstrs(gp.quicksum(R_plus[i, q, r] *
-                             L(l, paths[i][r], e)
-                             for r in R for i in I) <= C_e
-                 for q in Q
-                 for e in E)
+            # Print values for decision variables
+            for v in m.getVars():
+                print(v.varName, v.x)
 
-
-    m.setObjective(delta, GRB.MINIMIZE)
-
-    m.update()
-
-    m.write('test.lp')
-
-    # Optimize model
-    m.optimize()
-
-    # Print values for decision variables
-    for v in m.getVars():
-        print(v.varName, v.x)
-
-    # Print maximized profit value
-    print('Minimized result:', m.objVal)
+            # Print maximized profit value
+            print('Minimized result:', m.objVal)
 
 #
 # # Eq. 40
@@ -168,26 +158,26 @@ def solve_lp(commodities: list, paths: list, srg: list, G: DiGraph):
 #
 
 
-    # v = 6
-    # lhs = ''
-    # rhs = ''
-    # for i in I:
-    #     for r in R:
-    #         for e in G.in_edges(nbunch=v):
-    #             if L(l, paths[i][r], e) == 1:
-    #                 lhs += f'W+[{i},{r}] + '
-    #         for e in G.out_edges(nbunch=v):
-    #             if L(l, paths[i][r], e) == 1:
-    #                 rhs += f'W+[{i},{r}] + '
-    # print(f'({lhs[:-3]}) - ({rhs[:-3]}) = 0')
-    # # Eq. 41
-    # # for i in I:
-    # #     for v in set(G.nodes):
-    # #         if v not in commodities[i][0]:
-    #             # m.addConstr(
-    #             #     gp.quicksum(W_plus[i, r] * L(l, paths[i][r], e) for e in G.in_edges(nbunch=v) for r in R) - gp.quicksum(W_plus[i, r] * L(l, paths[i][r], e) for e in G.out_edges(nbunch=v) for r in R ) == 0)
-    # m.addConstrs((gp.quicksum(W_plus[i, r] * L(l, paths[i][r], e) for e in G.in_edges(nbunch=v) for r in R)
-    #              - gp.quicksum(W_plus[i, r] * L(l, paths[i][r], e) for e in G.out_edges(nbunch=v) for r in R ) == 0
-    #             for v in set(G.nodes)
-    #             for i in I
-    #             if v not in commodities[i][0]), name='flow_conservation')
+# v = 6
+# lhs = ''
+# rhs = ''
+# for i in I:
+#     for r in R:
+#         for e in G.in_edges(nbunch=v):
+#             if L(l, paths[i][r], e) == 1:
+#                 lhs += f'W+[{i},{r}] + '
+#         for e in G.out_edges(nbunch=v):
+#             if L(l, paths[i][r], e) == 1:
+#                 rhs += f'W+[{i},{r}] + '
+# print(f'({lhs[:-3]}) - ({rhs[:-3]}) = 0')
+# # Eq. 41
+# # for i in I:
+# #     for v in set(G.nodes):
+# #         if v not in commodities[i][0]:
+#             # m.addConstr(
+#             #     gp.quicksum(W_plus[i, r] * L(l, paths[i][r], e) for e in G.in_edges(nbunch=v) for r in R) - gp.quicksum(W_plus[i, r] * L(l, paths[i][r], e) for e in G.out_edges(nbunch=v) for r in R ) == 0)
+# m.addConstrs((gp.quicksum(W_plus[i, r] * L(l, paths[i][r], e) for e in G.in_edges(nbunch=v) for r in R)
+#              - gp.quicksum(W_plus[i, r] * L(l, paths[i][r], e) for e in G.out_edges(nbunch=v) for r in R ) == 0
+#             for v in set(G.nodes)
+#             for i in I
+#             if v not in commodities[i][0]), name='flow_conservation')

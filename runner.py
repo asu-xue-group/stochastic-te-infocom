@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import pickle
 import random
+from numpy.random import Generator, PCG64
 from graphs.ItalyNet import italy_net
 
 from opt_test import solve_lp
@@ -16,25 +17,30 @@ def L(edge: tuple, path: list, mapping: dict) -> bool:
 
 def main():
     with open('test.pk', 'rb') as f:
-        # G: nx.Graph = pickle.load(f)
-        # G = nx.to_directed(G)
-        G = italy_net()
+        # Open a network from file
+        G: nx.Graph = pickle.load(f)
+        G = nx.to_directed(G)
+        # Open a predefined network from classical papers
+        # G = italy_net()
 
-        nx.draw(G, with_labels=True, font_weight='bold')
-        plt.show()
+        # Draw the network / sanity check
+        # nx.draw(G, with_labels=True, font_weight='bold')
+        # plt.show()
 
+        # Assign random capacities to the edges
+        seed = 0
+        rng = Generator(PCG64(seed))
         for edge in G.edges:
-            if random.random() < 0.5:
-                capacity = 300
-            else:
-                capacity = 200
+            capacity = rng.normal(400, 50)
             nx.set_edge_attributes(G, {edge: {'cap': capacity}})
 
         # Commodities
         commodities = [
-            ((0, 8), 500),
-            ((1, 10), 450),
-            ((4, 13), 300),
+            ((0, 8), 450),
+            ((1, 4), 400),
+            ((4, 6), 300),
+            ((13, 3), 500),
+            ((5, 0), 500)
         ]
 
         # K-shortest paths for the commodities
@@ -52,8 +58,10 @@ def main():
                     break
 
         # Shared risk groups
-        srg = [((0, 1), 0.4), ((6, 10), 0.5), ((10, 13), 0.6)]
+        # srg = [((0, 1), 0.4), ((6, 10), 0.5), ((10, 13), 0.6)]
+        srg = [((0, 10), 0.4), ((9, 5), 0.5), ((2, 1), 0.6)]
 
+        # Solve the LP
         solve_lp(commodities, paths, srg, G)
 
 
