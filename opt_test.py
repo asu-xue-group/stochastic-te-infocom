@@ -57,6 +57,7 @@ def solve_lp(commodities: list, paths: list, srg: list, G: DiGraph):
     Q = range(int(math.pow(2, num_srg)))
     R = range(len(paths[0]))
     l = calculate_l(G, paths)
+    E = G.edges()
 
     # q = np.arange(math.pow(2, num_srg))
 
@@ -67,6 +68,7 @@ def solve_lp(commodities: list, paths: list, srg: list, G: DiGraph):
 
     # CONSTANTS
     beta = 0.95
+    C_e = 450
 
     # VARIABLES
     # W^+_i(r)
@@ -96,35 +98,38 @@ def solve_lp(commodities: list, paths: list, srg: list, G: DiGraph):
                  for i in I
                  for q in Q)
 
-    v = 6
-    lhs = ''
-    rhs = ''
-    for i in I:
-        for r in R:
-            for e in G.in_edges(nbunch=v):
-                if L(l, paths[i][r], e) == 1:
-                    lhs += f'W+[{i},{r}] + '
-            for e in G.out_edges(nbunch=v):
-                if L(l, paths[i][r], e) == 1:
-                    rhs += f'W+[{i},{r}] + '
-    print(f'({lhs[:-3]}) - ({rhs[:-3]}) = 0')
-    # Eq. 41
-    # for i in I:
-    #     for v in set(G.nodes):
-    #         if v not in commodities[i][0]:
-                # m.addConstr(
-                #     gp.quicksum(W_plus[i, r] * L(l, paths[i][r], e) for e in G.in_edges(nbunch=v) for r in R) - gp.quicksum(W_plus[i, r] * L(l, paths[i][r], e) for e in G.out_edges(nbunch=v) for r in R ) == 0)
-    m.addConstrs((gp.quicksum(W_plus[i, r] * L(l, paths[i][r], e) for e in G.in_edges(nbunch=v) for r in R)
-                 - gp.quicksum(W_plus[i, r] * L(l, paths[i][r], e) for e in G.out_edges(nbunch=v) for r in R ) == 0
-                for v in set(G.nodes)
-                for i in I
-                if v not in commodities[i][0]), name='flow_conservation')
+    # Eq. 42
+    m.addConstrs(gp.quicksum(W_plus[i, r] for r in R) == commodities[i][1] for i in I)
+
+    # Eq. 44
+    m.addConstrs(gp.quicksum(W_plus[i, r] *
+                            L(l, paths[i][r], e)
+                            for r in R for i in I) <= C_e
+                 for e in E)
+    # Eq. 45
+    m.addConstrs(gp.quicksum(R_plus[i, q, r] *
+                             L(l, paths[i][r], e)
+                             for r in R for i in I) <= C_e
+                 for q in Q
+                 for e in E)
+
 
     m.setObjective(delta, GRB.MINIMIZE)
 
     m.update()
 
     m.write('test.lp')
+
+    # Optimize model
+    m.optimize()
+
+    # Print values for decision variables
+    for v in m.getVars():
+        print(v.varName, v.x)
+
+    # Print maximized profit value
+    print('Minimized result:', m.objVal)
+
 #
 # # Eq. 40
 # for i in range(num_commodity):
@@ -161,12 +166,28 @@ def solve_lp(commodities: list, paths: list, srg: list, G: DiGraph):
 #     for q in range(num_state):
 #         m.addConstr(gp.quicksum(r_plus[q][i][r] * L[r][e] for r in range(R(i)) for i in range(num_commodity) <= c[e]))
 #
-# # Optimize model
-# m.optimize()
-#
-# # Print values for decision variables
-# for v in m.getVars():
-#     print(v.varName, v.x)
-#
-# # Print maximized profit value
-# print('Maximized profit:', m.objVal)
+
+
+    # v = 6
+    # lhs = ''
+    # rhs = ''
+    # for i in I:
+    #     for r in R:
+    #         for e in G.in_edges(nbunch=v):
+    #             if L(l, paths[i][r], e) == 1:
+    #                 lhs += f'W+[{i},{r}] + '
+    #         for e in G.out_edges(nbunch=v):
+    #             if L(l, paths[i][r], e) == 1:
+    #                 rhs += f'W+[{i},{r}] + '
+    # print(f'({lhs[:-3]}) - ({rhs[:-3]}) = 0')
+    # # Eq. 41
+    # # for i in I:
+    # #     for v in set(G.nodes):
+    # #         if v not in commodities[i][0]:
+    #             # m.addConstr(
+    #             #     gp.quicksum(W_plus[i, r] * L(l, paths[i][r], e) for e in G.in_edges(nbunch=v) for r in R) - gp.quicksum(W_plus[i, r] * L(l, paths[i][r], e) for e in G.out_edges(nbunch=v) for r in R ) == 0)
+    # m.addConstrs((gp.quicksum(W_plus[i, r] * L(l, paths[i][r], e) for e in G.in_edges(nbunch=v) for r in R)
+    #              - gp.quicksum(W_plus[i, r] * L(l, paths[i][r], e) for e in G.out_edges(nbunch=v) for r in R ) == 0
+    #             for v in set(G.nodes)
+    #             for i in I
+    #             if v not in commodities[i][0]), name='flow_conservation')
