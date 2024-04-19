@@ -31,7 +31,8 @@ def main():
         seed = 0
         rng = Generator(PCG64(seed))
         for edge in G.edges:
-            capacity = rng.normal(400, 50)
+            # capacity = rng.normal(400, 50)
+            capacity = 400
             nx.set_edge_attributes(G, {edge: {'cap': capacity}})
 
         # Commodities
