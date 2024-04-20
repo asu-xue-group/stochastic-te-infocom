@@ -22,10 +22,11 @@ def main():
         # G = nx.to_directed(G)
         # Open a predefined network from classical papers
         G = italy_net()
+        G = nx.to_directed(G)
 
         # Draw the network / sanity check
-        nx.draw(G, with_labels=True, font_weight='bold')
-        plt.show()
+        # nx.draw(G, with_labels=True, font_weight='bold')
+        # plt.show()
 
         # Assign random capacities to the edges
         seed = 0
