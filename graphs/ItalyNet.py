@@ -25,6 +25,7 @@ def italy_net():
     graph.add_edge(0, 3)
     graph.add_edge(0, 5)
     graph.add_edge(1, 2)
+    graph.add_edge(1, 3)
     graph.add_edge(1, 4)
     graph.add_edge(1, 5)
     graph.add_edge(1, 6)
