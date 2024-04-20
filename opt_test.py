@@ -111,11 +111,11 @@ def solve_lp(commodities: list, paths: list, srg: list, G: DiGraph):
                  commodities[i][1] for i in I for q in Q)
 
     # Eq. 44
-    m.addConstrs(gp.quicksum(W_plus[i, r] * L(l, paths[i][r], e) + W_plus[i, r] * L(l, paths[i][r], (e[1], e[0]))
+    m.addConstrs(gp.quicksum(W_plus[i, r] * L(l, paths[i][r], e)
                              for r in R for i in I) <= G[e[0]][e[1]]['cap']
                  for e in E)
     # Eq. 45
-    m.addConstrs(gp.quicksum(R_plus[i, q, r] * L(l, paths[i][r], e) + R_plus[i, q, r] * L(l, paths[i][r], (e[1], e[0]))
+    m.addConstrs(gp.quicksum(R_plus[i, q, r] * L(l, paths[i][r], e)
                              for r in R for i in I) <= G[e[0]][e[1]]['cap']
                  for q in Q
                  for e in E)
