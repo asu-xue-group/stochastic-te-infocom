@@ -1,8 +1,8 @@
-from networkx import Graph
+from networkx import Graph, DiGraph
 
 
 def italy_net():
-    graph = Graph()
+    graph = DiGraph()
 
     # Nodes
     graph.add_node(0, name='Turim')

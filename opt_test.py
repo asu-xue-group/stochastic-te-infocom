@@ -1,6 +1,7 @@
 import gurobipy as gp
 from gurobipy import *
 from networkx import DiGraph
+import numpy as np
 
 
 # import ENV
@@ -165,5 +166,11 @@ def solve_lp(commodities: list, paths: list, srg: list, G: DiGraph):
                 print(f'Commodity {i}, route {paths[i][r]}: {R_plus[i, q, r].x}')
             sat = sum([R_plus[i, q, r].x for r in R])
             print(f'Commodity {i} satisfied: {sat} out of {commodities[i][1]}\n')
+
+    print('\n==========================================')
+    for i in I:
+        cvar = alpha[i].x - (1 / beta) * gp.quicksum(p[q] * phi[i, q].x for q in Q)
+        print(f'Commodity {i} CVaR: {cvar}')
+        print(f'Commodity {i} Eq. 39 LHS = {commodities[i][1] - cvar}')
 
     print('delta:', delta.x)
