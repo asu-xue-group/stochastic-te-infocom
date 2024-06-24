@@ -5,8 +5,10 @@ import random
 from numpy.random import Generator, PCG64
 from graphs.ItalyNet import italy_net
 
-from opt_test import solve_lp
-
+# from opt_auxiliary import solve_lp
+# from opt_test import solve_lp
+# from opt_new import solve_lp
+from opt_new_alt import solve_lp
 
 def L(edge: tuple, path: list, mapping: dict) -> bool:
     if edge not in mapping:
@@ -45,7 +47,7 @@ def main():
             ((6, 11), 500)
         ]
 
-        # K-shortest paths for the commodities
+        # K-shortest paths for the ommodities
         paths = []
         k = 3
         for commodity in commodities:
@@ -60,8 +62,9 @@ def main():
                     break
 
         # Shared risk groups
-        srg = [((0, 1), 0.6), ((6, 10), 0.8), ((10, 13), 0.9)]
-        # srg = [((0, 10), 0.4), ((9, 5), 0.5), ((2, 1), 0.6)]
+        # srg = [((0, 1), 0.9), ((6, 10), 0.9), ((10, 13), 0.9)]
+        # srg = [((0, 1), 0.1), ((6, 10), 0.5), ((10, 13), 0.9)]
+        srg = [((0, 1), 0.01), ((6, 10), 0.01), ((10, 11), 0.9)]
 
         # Solve the LP
         solve_lp(commodities, paths, srg, G)
