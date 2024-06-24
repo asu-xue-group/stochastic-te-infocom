@@ -3,7 +3,7 @@ import networkx as nx
 import pickle
 import random
 from numpy.random import Generator, PCG64
-from graphs.ItalyNet import italy_net
+from graphs.italy_net import italy_net
 
 from opt_test import solve_lp
 

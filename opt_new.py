@@ -2,6 +2,7 @@ import gurobipy as gp
 from gurobipy import *
 from networkx import DiGraph
 import numpy as np
+import itertools
 
 
 # import ENV
@@ -13,6 +14,7 @@ def E_f(q: int, srg: list):
     indicators = np.array([int(i) for i in bin(q)[2:]])
     indicators = np.insert(indicators, 0, np.zeros(len(srg) - len(indicators)))
     failed_srg = [srg[i][0] for i in range(len(indicators)) if indicators[i] == 1]
+    failed_srg = list(itertools.chain.from_iterable(failed_srg))
     return failed_srg
 
 
@@ -24,17 +26,16 @@ def calc_pq(z, srg):
     return product
 
 
-def solve_lp(commodities: list, paths: list, srg: list, G: DiGraph):
+def solve_lp(commodities: list, srg: list, G: DiGraph):
     # with gp.Env(params=ENV.connection_params) as env:
     #     with gp.Model(env=env) as m:
     # META VARIABLES
     m = gp.Model()
     num_srg = len(srg)
-    # These variables are used to index the commodities, paths, and SRGs (for Gurobi variables).
+    # These variables are used to index the commodities and SRGs (for Gurobi variables).
     # Actual data is stored in their respective variables
     I = range(len(commodities))
     Q = range(int(math.pow(2, num_srg)))
-    # R = range(len(paths[0]))
     E = G.edges()
 
     # Calculate the probability of each failure event
@@ -51,8 +52,8 @@ def solve_lp(commodities: list, paths: list, srg: list, G: DiGraph):
         non_terminals[i] = all_nodes
 
     # CONSTANTS
-    beta = 0.9
-    gamma = 1.2
+    beta = 0.1
+    gamma = 1.0
 
     # VARIABLES
     # W^+_i(r)
@@ -104,14 +105,14 @@ def solve_lp(commodities: list, paths: list, srg: list, G: DiGraph):
 
     m.setObjective(alpha + (1 / (1 - beta)) * gp.quicksum(p[q] * phi[q] for q in Q), GRB.MINIMIZE)
     m.update()
-    m.write('test.lp')
+    # m.write('test.lp')
 
     # Optimize model
     m.optimize()
 
     # Print values for decision variables
-    for v in m.getVars():
-        print(v.varName, v.x)
+    # for v in m.getVars():
+    #     print(v.varName, v.x)
 
     # Print maximized profit value
     print('Minimized result:', m.objVal)
@@ -150,6 +151,7 @@ def solve_lp(commodities: list, paths: list, srg: list, G: DiGraph):
             print(f'Commodity {i} satisfied: {sat} out of {commodities[i][1]}\n')
             total = total + sat
         print(f'Total throughput: {total}')
+        print(f'----------------------------------------')
     #
     # print('\n==========================================')
     # for i in I:
