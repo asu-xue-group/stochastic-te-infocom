@@ -7,8 +7,9 @@ from graphs.italy_net import italy_net
 
 # from opt_auxiliary import solve_lp
 # from opt_test import solve_lp
-# from opt_new import solve_lp
-from opt_new_alt import solve_lp
+from opt_new import solve_lp
+# from opt_new_alt import solve_lp
+
 
 def L(edge: tuple, path: list, mapping: dict) -> bool:
     if edge not in mapping:
@@ -64,10 +65,10 @@ def main():
         # Shared risk groups
         # srg = [((0, 1), 0.9), ((6, 10), 0.9), ((10, 13), 0.9)]
         # srg = [((0, 1), 0.1), ((6, 10), 0.5), ((10, 13), 0.9)]
-        srg = [((0, 1), 0.01), ((6, 10), 0.01), ((10, 11), 0.9)]
+        srg = [(((0, 1),), 0.01), (((6, 10),), 0.01), (((10, 11),), 0.02)]
 
         # Solve the LP
-        solve_lp(commodities, paths, srg, G)
+        solve_lp(commodities, srg, G)
 
 
 if __name__ == '__main__':
