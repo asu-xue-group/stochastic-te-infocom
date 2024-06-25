@@ -21,12 +21,12 @@ def main():
 
     # Commodities
     commodities = [
-        ((1, 5), 2),
-        ((2, 6), 2)
+        ((1, 7), 2),
+        ((2, 8), 2)
     ]
 
     # Shared risk groups
-    srg = [(((3, 4),), 0.05), (((1, 4),), 0.02), (((3, 6),), 0.02), (((2, 3), (4, 5)), 0.001)]
+    srg = [(((3, 5),), 0.95), (((4, 6),), 0.05)]
 
     # Solve the LP
     solve_lp(commodities, srg, G)

@@ -1,6 +1,7 @@
 import gurobipy as gp
+import networkx as nx
 from gurobipy import *
-from networkx import DiGraph
+from networkx import DiGraph, Graph
 import numpy as np
 import itertools
 
@@ -15,6 +16,8 @@ def E_f(q: int, srg: list):
     indicators = np.insert(indicators, 0, np.zeros(len(srg) - len(indicators)))
     failed_srg = [srg[i][0] for i in range(len(indicators)) if indicators[i] == 1]
     failed_srg = list(itertools.chain.from_iterable(failed_srg))
+    for x in failed_srg[:]:
+        failed_srg.append(tuple(reversed(x)))
     return failed_srg
 
 
@@ -26,7 +29,7 @@ def calc_pq(z, srg):
     return product
 
 
-def solve_lp(commodities: list, srg: list, G: DiGraph):
+def solve_lp(commodities: list, srg: list, G: Graph):
     # with gp.Env(params=ENV.connection_params) as env:
     #     with gp.Model(env=env) as m:
     # META VARIABLES
@@ -40,7 +43,7 @@ def solve_lp(commodities: list, srg: list, G: DiGraph):
 
     # Calculate the probability of each failure event
     p = np.zeros((len(Q),))
-    for i, z in enumerate([list(i) for i in itertools.product([0, 1], repeat=3)]):
+    for i, z in enumerate([list(i) for i in itertools.product([0, 1], repeat=num_srg)]):
         p[i] = calc_pq(z, srg)
 
     # Cache the nodes after removing the source and the destination of a commodity
@@ -90,11 +93,11 @@ def solve_lp(commodities: list, srg: list, G: DiGraph):
                  for i in I for v in non_terminals[i] for q in Q)
 
     # Eq. 26
-    m.addConstrs(gp.quicksum(W_plus[i, *e] for i in I) <= G[e[0]][e[1]]['cap']
+    m.addConstrs(gp.quicksum(W_plus[i, e[0], e[1]] + W_plus[i, e[1], e[0]] for i in I) <= G[e[0]][e[1]]['cap']
                  for e in E)
 
     # Eq. 27
-    m.addConstrs(gp.quicksum(R_plus[i, q, *e] for i in I) <= G[e[0]][e[1]]['cap']
+    m.addConstrs(gp.quicksum(R_plus[i, q, e[0], e[1]] + R_plus[i, q, e[1], e[0]] for i in I) <= G[e[0]][e[1]]['cap']
                  for e in E for q in Q)
 
     # Eq. 28
@@ -109,10 +112,6 @@ def solve_lp(commodities: list, srg: list, G: DiGraph):
 
     # Optimize model
     m.optimize()
-
-    # Print values for decision variables
-    # for v in m.getVars():
-    #     print(v.varName, v.x)
 
     # Print maximized profit value
     print('Minimized result:', m.objVal)
@@ -130,7 +129,13 @@ def solve_lp(commodities: list, srg: list, G: DiGraph):
         sat = (sum([W_plus[i, *e1].x for e1 in G.in_edges(commodities[i][0][1])])
                - sum([W_plus[i, *e2].x for e2 in G.out_edges(commodities[i][0][1])]))
         print(f'Commodity {i} satisfied: {sat} out of {commodities[i][1]}')
-    #
+
+        print(f'Flow for commodity {i}: ', end='')
+        for k, v in W_plus.items():
+            if k[0] == i and v.x > 0:
+                print(f'({k[1]}, {k[2]}), {v.x:.3f} ', end='')
+        print('\n')
+
     print('\n==========================================')
     print('Recovery Flow')
     for q in Q:
@@ -148,9 +153,16 @@ def solve_lp(commodities: list, srg: list, G: DiGraph):
             #     print(f'Commodity {i}, route {paths[i][r]}: {R_plus[i, q, r].x}')
             sat = (sum([R_plus[i, q, *e3].x for e3 in G.in_edges(commodities[i][0][1])])
                    - sum([R_plus[i, q, *e4].x for e4 in G.out_edges(commodities[i][0][1])]))
-            print(f'Commodity {i} satisfied: {sat} out of {commodities[i][1]}\n')
+            print(f'Commodity {i} satisfied: {sat:.3f} out of {commodities[i][1]}')
             total = total + sat
-        print(f'Total throughput: {total}')
+
+            print(f'Flow for commodity {i}: ', end='')
+            for k, v in R_plus.items():
+                if k[0] == i and k[1] == q and v.x > 0:
+                    print(f'({k[2]}, {k[3]}), {v.x:.3f} ', end='')
+            print('\n')
+
+        print(f'Total throughput: {total:.3f}')
         print(f'----------------------------------------')
     #
     # print('\n==========================================')
