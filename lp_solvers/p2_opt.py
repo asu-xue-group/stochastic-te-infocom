@@ -5,9 +5,10 @@ from networkx import DiGraph, Graph
 import numpy as np
 import itertools
 from lp_solvers.common import *
+from utilities.print_formatting import print_flows
 
 
-def solve_p2(commodities: list, srg: list, G: Graph):
+def solve_p2(commodities: list, srg: list, G: DiGraph, beta, gamma):
     # with gp.Env(params=ENV.connection_params) as env:
     #     with gp.Model(env=env) as m:
     # META VARIABLES
@@ -31,10 +32,6 @@ def solve_p2(commodities: list, srg: list, G: Graph):
         all_nodes.remove(commodities[i][0][0])
         all_nodes.remove(commodities[i][0][1])
         non_terminals[i] = all_nodes
-
-    # CONSTANTS
-    beta = 0.9
-    gamma = 1.0
 
     # VARIABLES
     # W^+_i(r)
@@ -91,64 +88,6 @@ def solve_p2(commodities: list, srg: list, G: Graph):
     # Optimize model
     m.optimize()
 
-    # Print maximized profit value
-    print('Minimized result:', m.objVal)
-    #
-    # Results in a more readable format
-    print('\n==========================================')
-    print('Working Flow')
-    # for i in I:
-    #     for r in R:
-    #         print(f'Commodity {i}, route {paths[i][r]}: {W_plus[i, r].x}')
-
-    check = all([sum([W_plus[i, *e].x for i in I]) <= G[e[0]][e[1]]['cap'] for e in E])
-    print(f'Capacity check: {check}')
-    for i in I:
-        sat = (sum([W_plus[i, *e1].x for e1 in G.in_edges(commodities[i][0][1])])
-               - sum([W_plus[i, *e2].x for e2 in G.out_edges(commodities[i][0][1])]))
-        print(f'Commodity {i} satisfied: {sat} out of {commodities[i][1]}')
-
-        print(f'Flow for commodity {i}: ', end='')
-        for k, v in W_plus.items():
-            if k[0] == i and v.x > 0:
-                print(f'({k[1]}, {k[2]}), {v.x:.3f} ', end='')
-        print('\n')
-
-    print('\n==========================================')
-    print('Recovery Flow')
-    for q in Q:
-        indicators = np.array([int(i) for i in bin(q)[2:]])
-        indicators = np.insert(indicators, 0, np.zeros(len(srg) - len(indicators)))
-        failed_srg = [srg[i][0] for i in range(len(indicators)) if indicators[i] == 1]
-        print(f'Failed SRG {failed_srg}')
-        check = all(
-            [sum([R_plus[i, q, *e].x for i in I]) <= G[e[0]][e[1]]['cap'] for e in E
-             for q in Q])
-        print(f'Capacity check: {check}')
-        total = 0
-        for i in I:
-            # for r in R:
-            #     print(f'Commodity {i}, route {paths[i][r]}: {R_plus[i, q, r].x}')
-            sat = (sum([R_plus[i, q, *e3].x for e3 in G.in_edges(commodities[i][0][1])])
-                   - sum([R_plus[i, q, *e4].x for e4 in G.out_edges(commodities[i][0][1])]))
-            print(f'Commodity {i} satisfied: {sat:.3f} out of {commodities[i][1]}')
-            total = total + sat
-
-            print(f'Flow for commodity {i}: ', end='')
-            for k, v in R_plus.items():
-                if k[0] == i and k[1] == q and v.x > 0:
-                    print(f'({k[2]}, {k[3]}), {v.x:.3f} ', end='')
-            print('\n')
-
-        print(f'Total throughput: {total:.3f}')
-        print(f'----------------------------------------')
-    #
-    # print('\n==========================================')
-    # for i in I:
-    #     cvar = alpha[i].x - (1 / beta) * gp.quicksum(p[q] * phi[i, q].x for q in Q)
-    #     print(f'Commodity {i} CVaR: {cvar}')
-    #     print(f'Commodity {i} Eq. 39 LHS = {commodities[i][1] - cvar}')
-    #
-    # print('delta:', delta.x)
+    print_flows(G, W_plus, R_plus, commodities, m, srg)
 
     return m.objVal
