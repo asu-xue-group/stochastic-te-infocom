@@ -7,7 +7,7 @@ from graphs.italy_net import italy_net
 
 # from opt_auxiliary import solve_lp
 # from opt_test import solve_lp
-from opt_new import solve_lp
+from p2_opt import solve_lp
 # from opt_new_alt import solve_lp
 
 

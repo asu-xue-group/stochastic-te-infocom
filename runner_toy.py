@@ -1,7 +1,8 @@
 import matplotlib.pyplot as plt
 import networkx as nx
 from graphs.toy import toy
-from opt_new import solve_lp
+from lp_solvers.p2_opt import solve_p2
+from lp_solvers.p4_opt import solve_p4
 
 
 def L(edge: tuple, path: list, mapping: dict) -> bool:
@@ -29,7 +30,11 @@ def main():
     srg = [(((3, 5),), 0.95), (((4, 6),), 0.05)]
 
     # Solve the LP
-    solve_lp(commodities, srg, G)
+    opt_val = solve_p2(commodities, srg, G)
+
+    print('********************************************')
+
+    solve_p4(commodities, srg, G, opt_val)
 
 
 if __name__ == '__main__':
