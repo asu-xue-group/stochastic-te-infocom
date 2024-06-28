@@ -7,13 +7,15 @@ from lp_solvers.common import *
 from utilities.print_formatting import print_flows
 
 
-def solve_p4(commodities: list, srg: list, G: DiGraph, l_opt, beta, gamma, _lambda, print_flow=False):
+def solve_p4(commodities: list, srg: list, G: DiGraph, beta, gamma, lambda_opt, W_opt, print_flow=False):
     # META VARIABLES
     with gp.Env(empty=True) as env:
         env.setParam('OutputFlag', 0)
+        env.setParam('DualReductions', 0)
         env.start()
         m = gp.Model(env=env)
         num_srg = len(srg)
+
         # These variables are used to index the commodities and SRGs (for Gurobi variables).
         # Actual data is stored in their respective variables
         I = range(len(commodities))
@@ -36,9 +38,9 @@ def solve_p4(commodities: list, srg: list, G: DiGraph, l_opt, beta, gamma, _lamb
 
         # VARIABLES
         # W^+_i(r)
-        W_plus = m.addVars(I, E, name="W")
+        W = m.addVars(I, E, name="W")
         # R^{+,q}_i(r)
-        R_plus = m.addVars(I, Q, E, name="R")
+        R = m.addVars(I, Q, E, name="R")
         # delta = m.addVar(name='delta')
         # alpha
         alpha = m.addVar(name='alpha')
@@ -48,61 +50,63 @@ def solve_p4(commodities: list, srg: list, G: DiGraph, l_opt, beta, gamma, _lamb
         # CONSTRAINTS
 
         # Eq. 33
-        m.addConstrs((gp.quicksum(W_plus[i, *e1] for e1 in G.in_edges(v)) -
-                     gp.quicksum(W_plus[i, *e2] for e2 in G.out_edges(v)) == 0
+        m.addConstrs((gp.quicksum(W[i, *e1] for e1 in G.in_edges(v)) -
+                     gp.quicksum(W[i, *e2] for e2 in G.out_edges(v)) == 0
                      for i in I for v in non_terminals[i]), name='Eq 33')
 
         # Eq. 34
-        m.addConstrs((gp.quicksum(W_plus[i, *e1] for e1 in G.in_edges(commodities[i][0][1])) -
-                     gp.quicksum(W_plus[i, *e2] for e2 in G.out_edges(commodities[i][0][1])) >= gamma * commodities[i][1]
+        m.addConstrs((gp.quicksum(W[i, *e1] for e1 in G.in_edges(commodities[i][0][1])) -
+                     gp.quicksum(W[i, *e2] for e2 in G.out_edges(commodities[i][0][1])) >= gamma * commodities[i][1]
                      for i in I), name='Eq 34')
 
         # Eq. 35
-        m.addConstrs((gp.quicksum(R_plus[i, q, *e1] for e1 in G.in_edges(v)) -
-                     gp.quicksum(R_plus[i, q, *e2] for e2 in G.out_edges(v)) == 0
+        m.addConstrs((gp.quicksum(R[i, q, *e1] for e1 in G.in_edges(v)) -
+                     gp.quicksum(R[i, q, *e2] for e2 in G.out_edges(v)) == 0
                      for i in I for v in non_terminals[i] for q in Q), name='Eq 35')
 
         # Eq. 36
-        m.addConstrs((gp.quicksum(W_plus[i, e[0], e[1]] + W_plus[i, e[1], e[0]] for i in I) <= G[e[0]][e[1]]['cap']
+        m.addConstrs((gp.quicksum(W[i, e[0], e[1]] + W[i, e[1], e[0]] for i in I) <= G[e[0]][e[1]]['cap']
                      for e in E), name='Eq 36')
 
         # Eq. 37
-        m.addConstrs((gp.quicksum(R_plus[i, q, e[0], e[1]] + R_plus[i, q, e[1], e[0]] for i in I) <= G[e[0]][e[1]]['cap']
+        m.addConstrs((gp.quicksum(R[i, q, e[0], e[1]] + R[i, q, e[1], e[0]] for i in I) <= G[e[0]][e[1]]['cap']
                      for e in E for q in Q), name='Eq 37')
 
         # Eq. 38
-        m.addConstrs((R_plus[i, q, *e] <= W_plus[i, *e] for e in E for q in Q for i in I), name='Eq 38')
+        m.addConstrs((R[i, q, *e] <= W[i, *e] for e in E for q in Q for i in I), name='Eq 38')
 
         # Eq. 41
-        m.addConstrs((R_plus[i, q, *e] == 0 for q in Q for e in E_f(q, srg) for i in I), name='Eq 41')
+        m.addConstrs((R[i, q, *e] == 0 for q in Q for e in E_f(q, srg) for i in I), name='Eq 41')
+
+        # Cycle prevention
+        m.addConstr(gp.quicksum(gp.quicksum(W[i, *e] for e in E) for i in I) <= W_opt)
 
         # Eq. 42
-        m.addConstrs((phi[q] >= gp.quicksum(W_plus[i, *e1] for i in I for e1 in G.in_edges(commodities[i][0][1])) -
-                     gp.quicksum(W_plus[i, *e2] for i in I for e2 in G.out_edges(commodities[i][0][1])) -
-                     gp.quicksum(R_plus[i, q, *e3] for i in I for e3 in G.in_edges(commodities[i][0][1])) +
-                     gp.quicksum(R_plus[i, q, *e4] for i in I for e4 in G.out_edges(commodities[i][0][1]))
+        m.addConstrs((phi[q] >= gp.quicksum(W[i, *e1] for i in I for e1 in G.in_edges(commodities[i][0][1])) -
+                     gp.quicksum(W[i, *e2] for i in I for e2 in G.out_edges(commodities[i][0][1])) -
+                     gp.quicksum(R[i, q, *e3] for i in I for e3 in G.in_edges(commodities[i][0][1])) +
+                     gp.quicksum(R[i, q, *e4] for i in I for e4 in G.out_edges(commodities[i][0][1]))
                      - alpha for q in Q), name='Eq 42')
 
         # Eq. 44
-        m.addConstr((alpha + 1 / (1 - beta) * gp.quicksum(p[q] * phi[q] for q in Q) <= _lambda * l_opt),
+        m.addConstr((alpha + 1 / (1 - beta) * gp.quicksum(p[q] * phi[q] for q in Q) <= lambda_opt),
                     name='Eq 44')
 
+        m.setObjective(gp.quicksum((
+                       gp.quicksum(R[i, q, *e] for i in I for e in G.in_edges(commodities[i][0][1])) -
+                       gp.quicksum(R[i, q, *e] for i in I for e in G.out_edges(commodities[i][0][1]))) * p[q]
+                       for q in Q), GRB.MAXIMIZE)
 
-
-        m.setObjective(gp.quicksum(gp.quicksum(W_plus[i, e[0], e[1]]
-                                               for e in G.edges) for i in I), GRB.MINIMIZE)
-        m.update()
         m.write('test.lp')
-
         m.optimize()
 
         print(f'alpha={alpha.x}')
 
         if print_flow:
-            print_flows(G, W_plus, R_plus, commodities, m, srg, p)
+            print_flows(G, W, R, commodities, m, srg, p)
 
         if m.Status == GRB.OPTIMAL:
             obj_val = alpha + (1 / (1 - beta)) * gp.quicksum(p[q] * phi[q] for q in Q)
-            return obj_val.getValue(), W_plus, m
+            return obj_val.getValue(), W, m
         else:
             return None, None, None

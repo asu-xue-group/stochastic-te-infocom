@@ -10,7 +10,7 @@ def print_flows(G, W_plus, R_plus, commodities, m, srg, p):
     E = G.edges()
 
     # Print maximized profit value
-    print('Minimized result:', m.objVal)
+    print('Optimized result:', m.objVal)
     #
     # Results in a more readable format
     print('\n==========================================')
@@ -29,7 +29,7 @@ def print_flows(G, W_plus, R_plus, commodities, m, srg, p):
         print(f'Flow for commodity {i}: ', end='')
         for k, v in W_plus.items():
             if k[0] == i and v.x > 0:
-                print(f'({k[1]}, {k[2]}), {v.x:.3f} ', end='')
+                print(f'({k[1]}, {k[2]}), {v.x:.3f} | ', end='')
         print('\n')
 
     print('\n==========================================')
@@ -57,7 +57,7 @@ def print_flows(G, W_plus, R_plus, commodities, m, srg, p):
             print(f'Flow for commodity {i}: ', end='')
             for k, v in R_plus.items():
                 if k[0] == i and k[1] == q and v.x > 0:
-                    print(f'({k[2]}, {k[3]}), {v.x:.3f} ', end='')
+                    print(f'({k[2]}, {k[3]}), {v.x:.3f} | ', end='')
             print('\n')
 
         print(f'Total throughput: {total:.3f}')
