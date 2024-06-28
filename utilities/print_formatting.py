@@ -3,7 +3,7 @@ import math
 import numpy as np
 
 
-def print_flows(G, W_plus, R_plus, commodities, m, srg):
+def print_flows(G, W_plus, R_plus, commodities, m, srg, p):
     num_srg = len(srg)
     I = range(len(commodities))
     Q = range(int(math.pow(2, num_srg)))
@@ -38,7 +38,9 @@ def print_flows(G, W_plus, R_plus, commodities, m, srg):
         indicators = np.array([int(i) for i in bin(q)[2:]])
         indicators = np.insert(indicators, 0, np.zeros(len(srg) - len(indicators)))
         failed_srg = [srg[i][0] for i in range(len(indicators)) if indicators[i] == 1]
+        print(f'{q}-th case')
         print(f'Failed SRG {failed_srg}')
+        print(f'Probability: {p[q]:.4f}')
         check = all(
             [sum([R_plus[i, q, *e].x for i in I]) <= G[e[0]][e[1]]['cap'] for e in E
              for q in Q])

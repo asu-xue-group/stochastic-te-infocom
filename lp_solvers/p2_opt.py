@@ -88,6 +88,6 @@ def solve_p2(commodities: list, srg: list, G: DiGraph, beta, gamma):
     # Optimize model
     m.optimize()
 
-    print_flows(G, W_plus, R_plus, commodities, m, srg)
+    print_flows(G, W_plus, R_plus, commodities, m, srg, p)
 
     return m.objVal

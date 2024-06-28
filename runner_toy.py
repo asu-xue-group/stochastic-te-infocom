@@ -24,7 +24,7 @@ def main():
 
     # Constants
     gamma = 1.0
-    beta = 0.9
+    beta = 0.95
 
     # Solve the LP
     opt_val = solve_p2(commodities, srg, G, beta, gamma)
@@ -34,7 +34,7 @@ def main():
     # Determine an upper bound of lambda
     lambda_ub = 10
     lambda_lb = 1
-    epsilon = 0.001
+    epsilon = 1e-6
     itr = 1
     best_lambda = -1
 
@@ -60,6 +60,7 @@ def main():
                 best_lambda = curr_lambda
                 best_flows = flows
                 lambda_ub = curr_lambda
+                print(f'Current CVaR: {opt_val * curr_lambda:.8f}')
                 print('Acyclic solution found, decreasing lambda')
                 # We can stop early if the p4's objective is already equivalent to p2, there's nothing we need to do
                 if obj_val == opt_val:
@@ -71,7 +72,8 @@ def main():
     if best_lambda == -1:
         print('\nFailed to find an acyclic solution from the input')
     else:
-        print(f'\nOptimal lambda is {best_lambda}, corresponding flow:')
+        print(f'\nOptimal lambda is {best_lambda:.4f}, CVaR({beta})={best_lambda * opt_val:.8f}\n'
+              f'corresponding flow:')
         solve_p4(commodities, srg, G, opt_val, beta, gamma, best_lambda, True)
 
 
