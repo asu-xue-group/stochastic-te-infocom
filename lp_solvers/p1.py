@@ -29,13 +29,13 @@ def solve_p1(commodities: list, G: DiGraph):
         gamma = m.addVar(name='gamma')
 
         # Eq. 6 flow conservation
-        m.addConstrs(gp.quicksum(W[i, *e] for e in G.in_edges(v)) -
-                     gp.quicksum(W[i, *e] for e in G.out_edges(v)) == 0
+        m.addConstrs(gp.quicksum(W[i, e[0], e[1]] for e in G.in_edges(v)) -
+                     gp.quicksum(W[i, e[0], e[1]] for e in G.out_edges(v)) == 0
                      for i in I for v in non_terminals[i])
 
         # Eq. 7 bandwidth requirements
-        m.addConstrs(gp.quicksum(W[i, *e] for e in G.in_edges(commodities[i][0][1])) -
-                     gp.quicksum(W[i, *e] for e in G.out_edges(commodities[i][0][1])) >= gamma * commodities[i][1]
+        m.addConstrs(gp.quicksum(W[i, e[0], e[1]] for e in G.in_edges(commodities[i][0][1])) -
+                     gp.quicksum(W[i, e[0], e[1]] for e in G.out_edges(commodities[i][0][1])) >= gamma * commodities[i][1]
                      for i in I)
 
         # Eq. 8 capacity constraint
