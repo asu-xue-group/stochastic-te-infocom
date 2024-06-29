@@ -12,6 +12,7 @@ def solve_p4(commodities: list, srg: list, G: DiGraph, beta, gamma, lambda_opt, 
     with gp.Env(empty=True) as env:
         env.setParam('OutputFlag', 0)
         env.setParam('DualReductions', 0)
+        env.setParam('Method', 0)
         env.start()
         m = gp.Model(env=env)
         num_srg = len(srg)
@@ -110,3 +111,4 @@ def solve_p4(commodities: list, srg: list, G: DiGraph, beta, gamma, lambda_opt, 
             return obj_val.getValue(), W, m
         else:
             return None, None, None
+

@@ -27,7 +27,8 @@ def main():
     srg = [(((3, 5),), 0.95), (((4, 6),), 0.05)]
 
     # CVaR beta
-    beta = 0.95
+    # beta 0.945.txt
+    beta = 0.945
 
     # Solve for the optimal gamma
     gamma = solve_p1(commodities, G)
@@ -35,7 +36,6 @@ def main():
         logging.critical('No flow can be established for the input.')
     else:
         logging.info(f'gamma={gamma}')
-
     # Maximum flow
     W_max = np.sum([gamma * c[1] for c in commodities])
     logging.info(f'W_max={W_max}')
@@ -77,7 +77,6 @@ def main():
                     logging.info('Current flow value is already equal to opt, no need for further optimization')
                     break
         itr += 1
-
     if best_lambda == -1:
         logging.error('\nFailed to find an acyclic solution from the input')
     else:

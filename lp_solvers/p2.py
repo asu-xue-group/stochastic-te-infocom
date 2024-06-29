@@ -11,6 +11,7 @@ from utilities.print_formatting import print_flows
 def solve_p2(commodities: list, srg: list, G: DiGraph, beta, gamma, _lambda):
     with gp.Env(empty=True) as env:
         env.setParam('OutputFlag', 0)
+        env.setParam('Method', 0)
         env.start()
         m = gp.Model(env=env)
 
