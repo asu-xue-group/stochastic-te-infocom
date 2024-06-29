@@ -19,11 +19,11 @@ def print_flows(G, W_plus, R_plus, commodities, m, srg, p):
     #     for r in R:
     #         print(f'Commodity {i}, route {paths[i][r]}: {W_plus[i, r].x}')
 
-    check = all([sum([W_plus[i, *e].x for i in I]) <= G[e[0]][e[1]]['cap'] for e in E])
+    check = all([sum([W_plus[i, e[0], e[1]].x for i in I]) <= G[e[0]][e[1]]['cap'] for e in E])
     print(f'Capacity check: {check}')
     for i in I:
-        sat = (sum([W_plus[i, *e1].x for e1 in G.in_edges(commodities[i][0][1])])
-               - sum([W_plus[i, *e2].x for e2 in G.out_edges(commodities[i][0][1])]))
+        sat = (sum([W_plus[i, e[0], e[1]].x for e in G.in_edges(commodities[i][0][1])])
+               - sum([W_plus[i, e[0], e[1]].x for e in G.out_edges(commodities[i][0][1])]))
         print(f'Commodity {i} satisfied: {sat} out of {commodities[i][1]}')
 
         print(f'Flow for commodity {i}: ', end='')
@@ -42,15 +42,15 @@ def print_flows(G, W_plus, R_plus, commodities, m, srg, p):
         print(f'Failed SRG {failed_srg}')
         print(f'Probability: {p[q]:.4f}')
         check = all(
-            [sum([R_plus[i, q, *e].x for i in I]) <= G[e[0]][e[1]]['cap'] for e in E
+            [sum([R_plus[i, q, e[0], e[1]].x for i in I]) <= G[e[0]][e[1]]['cap'] for e in E
              for q in Q])
         print(f'Capacity check: {check}')
         total = 0
         for i in I:
             # for r in R:
             #     print(f'Commodity {i}, route {paths[i][r]}: {R_plus[i, q, r].x}')
-            sat = (sum([R_plus[i, q, *e3].x for e3 in G.in_edges(commodities[i][0][1])])
-                   - sum([R_plus[i, q, *e4].x for e4 in G.out_edges(commodities[i][0][1])]))
+            sat = (sum([R_plus[i, q, e[0], e[1]].x for e in G.in_edges(commodities[i][0][1])])
+                   - sum([R_plus[i, q, e[0], e[1]].x for e in G.out_edges(commodities[i][0][1])]))
             print(f'Commodity {i} satisfied: {sat:.3f} out of {commodities[i][1]}')
             total = total + sat
 

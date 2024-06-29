@@ -48,18 +48,18 @@ def solve_p2(commodities: list, srg: list, G: DiGraph, beta, gamma, _lambda):
 
         # CONSTRAINTS
         # Eq. 23
-        m.addConstrs(gp.quicksum(W[i, *e1] for e1 in G.in_edges(v)) -
-                     gp.quicksum(W[i, *e2] for e2 in G.out_edges(v)) == 0
+        m.addConstrs(gp.quicksum(W[i, e[0], e[1]] for e in G.in_edges(v)) -
+                     gp.quicksum(W[i, e[0], e[1]] for e in G.out_edges(v)) == 0
                      for i in I for v in non_terminals[i])
 
         # Eq. 24
-        m.addConstrs(gp.quicksum(W[i, *e1] for e1 in G.in_edges(commodities[i][0][1])) -
-                     gp.quicksum(W[i, *e2] for e2 in G.out_edges(commodities[i][0][1])) >= gamma * commodities[i][1]
+        m.addConstrs(gp.quicksum(W[i, e[0], e[1]] for e in G.in_edges(commodities[i][0][1])) -
+                     gp.quicksum(W[i, e[0], e[1]] for e in G.out_edges(commodities[i][0][1])) >= gamma * commodities[i][1]
                      for i in I)
 
         # Eq. 25
-        m.addConstrs(gp.quicksum(R[i, q, *e1] for e1 in G.in_edges(v)) -
-                     gp.quicksum(R[i, q, *e2] for e2 in G.out_edges(v)) == 0
+        m.addConstrs(gp.quicksum(R[i, q, e[0], e[1]] for e in G.in_edges(v)) -
+                     gp.quicksum(R[i, q, e[0], e[1]] for e in G.out_edges(v)) == 0
                      for i in I for v in non_terminals[i] for q in Q)
 
         # Eq. 26
@@ -67,16 +67,16 @@ def solve_p2(commodities: list, srg: list, G: DiGraph, beta, gamma, _lambda):
                      for e in E)
 
         # Eq. 28
-        m.addConstrs(R[i, q, *e] <= W[i, *e] for e in E for q in Q for i in I)
+        m.addConstrs(R[i, q, e[0], e[1]] <= W[i, e[0], e[1]] for e in E for q in Q for i in I)
 
         # Eq. 31
-        m.addConstrs(R[i, q, *e] == 0 for q in Q for e in E_f(q, srg) for i in I)
+        m.addConstrs(R[i, q, e[0], e[1]] == 0 for q in Q for e in E_f(q, srg) for i in I)
 
         # auxiliary one, Eq. 22
-        m.addConstrs(phi[q] >= gp.quicksum(W[i, *e1] for i in I for e1 in G.in_edges(commodities[i][0][1])) -
-                     gp.quicksum(W[i, *e2] for i in I for e2 in G.out_edges(commodities[i][0][1])) -
-                     gp.quicksum(R[i, q, *e3] for i in I for e3 in G.in_edges(commodities[i][0][1])) +
-                     gp.quicksum(R[i, q, *e4] for i in I for e4 in G.out_edges(commodities[i][0][1]))
+        m.addConstrs(phi[q] >= gp.quicksum(W[i, e[0], e[1]] for i in I for e in G.in_edges(commodities[i][0][1])) -
+                     gp.quicksum(W[i, e[0], e[1]] for i in I for e in G.out_edges(commodities[i][0][1])) -
+                     gp.quicksum(R[i, q, e[0], e[1]] for i in I for e in G.in_edges(commodities[i][0][1])) +
+                     gp.quicksum(R[i, q, e[0], e[1]] for i in I for e in G.out_edges(commodities[i][0][1]))
                      - alpha for q in Q)
 
 
