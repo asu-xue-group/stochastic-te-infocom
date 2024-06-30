@@ -1,18 +1,15 @@
 import gurobipy as gp
-import networkx as nx
 from gurobipy import *
-from networkx import DiGraph, Graph
-import numpy as np
+from networkx import DiGraph
+
 from lp_solvers.common import *
 from utilities.print_formatting import print_flows
 
 
-def solve_p4(commodities: list, srg: list, G: DiGraph, beta, gamma, lambda_opt, W_opt, print_flow=False):
+def solve_p4(commodities: list, srg: list, G: DiGraph, W_opt, print_flow=False):
     # META VARIABLES
     with gp.Env(empty=True) as env:
         env.setParam('OutputFlag', 0)
-        env.setParam('DualReductions', 0)
-        env.setParam('Method', 0)
         env.start()
         m = gp.Model(env=env)
         num_srg = len(srg)
@@ -36,79 +33,32 @@ def solve_p4(commodities: list, srg: list, G: DiGraph, beta, gamma, lambda_opt, 
             all_nodes.remove(commodities[i][0][1])
             non_terminals[i] = all_nodes
 
-
         # VARIABLES
-        # W^+_i(r)
-        W = m.addVars(I, E, name="W")
         # R^{+,q}_i(r)
         R = m.addVars(I, Q, E, name="R")
-        # delta = m.addVar(name='delta')
-        # alpha
-        alpha = m.addVar(name='alpha')
-        # phi^q_i
-        phi = m.addVars(Q, name='phi')
 
         # CONSTRAINTS
-
-        # Eq. 33
-        m.addConstrs((gp.quicksum(W[i, e[0], e[1]] for e in G.in_edges(v)) -
-                     gp.quicksum(W[i, e[0], e[1]] for e in G.out_edges(v)) == 0
-                     for i in I for v in non_terminals[i]), name='Eq 33')
-
-        # Eq. 34
-        m.addConstrs((gp.quicksum(W[i, e[0], e[1]] for e in G.in_edges(commodities[i][0][1])) -
-                     gp.quicksum(W[i, e[0], e[1]] for e in G.out_edges(commodities[i][0][1])) >= gamma * commodities[i][1]
-                     for i in I), name='Eq 34')
-
-        # Eq. 35
+        # Constraint (e): flow conservation for recovery flows
         m.addConstrs((gp.quicksum(R[i, q, e[0], e[1]] for e in G.in_edges(v)) -
-                     gp.quicksum(R[i, q, e[0], e[1]] for e in G.out_edges(v)) == 0
-                     for i in I for v in non_terminals[i] for q in Q), name='Eq 35')
+                      gp.quicksum(R[i, q, e[0], e[1]] for e in G.out_edges(v)) == 0
+                      for i in I for v in non_terminals[i] for q in Q), name='e')
 
-        # Eq. 36
-        m.addConstrs((gp.quicksum(W[i, e[0], e[1]] + W[i, e[1], e[0]] for i in I) <= G[e[0]][e[1]]['cap']
-                     for e in E), name='Eq 36')
+        # Constraint (f): zero flow for broken links
+        m.addConstrs((R[i, q, e[0], e[1]] == 0 for q in Q for e in E_f(q, srg) for i in I), name='f')
 
-        # Eq. 37
-        m.addConstrs((gp.quicksum(R[i, q, e[0], e[1]] + R[i, q, e[1], e[0]] for i in I) <= G[e[0]][e[1]]['cap']
-                     for e in E for q in Q), name='Eq 37')
+        # Constraint (g): recovery flow must be smaller than original flow
+        m.addConstrs((R[i, q, e[0], e[1]] <= W[i, e[0], e[1]] for e in E for q in Q for i in I), name='g')
 
-        # Eq. 38
-        m.addConstrs((R[i, q, e[0], e[1]] <= W[i, e[0], e[1]] for e in E for q in Q for i in I), name='Eq 38')
+        m.setObjective(gp.quicksum(R[i, q, e[0], e[1]] for e in E for i in I))
 
-        # Eq. 41
-        m.addConstrs((R[i, q, e[0], e[1]] == 0 for q in Q for e in E_f(q, srg) for i in I), name='Eq 41')
-
-        # Cycle prevention
-        m.addConstr(gp.quicksum(gp.quicksum(W[i, e[0], e[1]] for e in E) for i in I) <= W_opt)
-
-        # Eq. 42
-        m.addConstrs((phi[q] >= gp.quicksum(W[i, e[0], e[1]] for i in I for e in G.in_edges(commodities[i][0][1])) -
-                     gp.quicksum(W[i, e[0], e[1]] for i in I for e in G.out_edges(commodities[i][0][1])) -
-                     gp.quicksum(R[i, q, e[0], e[1]] for i in I for e in G.in_edges(commodities[i][0][1])) +
-                     gp.quicksum(R[i, q, e[0], e[1]] for i in I for e in G.out_edges(commodities[i][0][1]))
-                     - alpha for q in Q), name='Eq 42')
-
-        # Eq. 44
-        m.addConstr((alpha + 1 / (1 - beta) * gp.quicksum(p[q] * phi[q] for q in Q) <= lambda_opt),
-                    name='Eq 44')
-
-        m.setObjective(gp.quicksum((
-                       gp.quicksum(R[i, q, e[0], e[1]] for i in I for e in G.in_edges(commodities[i][0][1])) -
-                       gp.quicksum(R[i, q, e[0], e[1]] for i in I for e in G.out_edges(commodities[i][0][1]))) * p[q]
-                       for q in Q), GRB.MAXIMIZE)
-
-        m.write('test.lp')
+        # m.write('test.lp')
         m.optimize()
-
-        print(f'alpha={alpha.x}')
 
         if print_flow:
             print_flows(G, W, R, commodities, m, srg, p)
 
-        if m.Status == GRB.OPTIMAL:
-            obj_val = alpha + (1 / (1 - beta)) * gp.quicksum(p[q] * phi[q] for q in Q)
-            return obj_val.getValue(), W, m
-        else:
-            return None, None, None
-
+        # if m.Status == GRB.OPTIMAL:
+        #     obj_val = alpha + (1 / (1 - beta)) * gp.quicksum(p[q] * phi[q] for q in Q)
+        #     return obj_val.getValue(), W, m
+        # else:
+        #     return None, None, None

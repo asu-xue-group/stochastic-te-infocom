@@ -1,11 +1,8 @@
 import gurobipy as gp
-import networkx as nx
 from gurobipy import *
-from networkx import DiGraph, Graph
-import numpy as np
-import itertools
+from networkx import DiGraph
+
 from lp_solvers.common import *
-from utilities.print_formatting import print_flows
 
 
 def cvar(commodities: list, srg: list, G: DiGraph, W, beta):
@@ -21,7 +18,6 @@ def cvar(commodities: list, srg: list, G: DiGraph, W, beta):
         I = range(len(commodities))
         Q = range(int(math.pow(2, num_srg)))
         E = G.edges()
-
 
         p = np.zeros((len(Q),))
         for i, z in enumerate([list(i) for i in itertools.product([0, 1], repeat=num_srg)]):

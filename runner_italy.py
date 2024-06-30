@@ -1,13 +1,12 @@
-import matplotlib.pyplot as plt
 import networkx as nx
-import pickle
-import random
 from numpy.random import Generator, PCG64
-from graphs.italy_net import italy_net
-
 # from opt_auxiliary import solve_lp
 # from opt_test import solve_lp
 from p2_opt import solve_lp
+
+from graphs.italy_net import italy_net
+
+
 # from opt_new_alt import solve_lp
 
 
@@ -58,7 +57,7 @@ def main():
                     paths.append([tuple(path)])
                 else:
                     paths[-1].append(tuple(path))
-                if counter == k-1:
+                if counter == k - 1:
                     paths[-1] = tuple(paths[-1])
                     break
 

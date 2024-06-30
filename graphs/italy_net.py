@@ -1,4 +1,4 @@
-from networkx import Graph, DiGraph
+from networkx import DiGraph
 
 
 def italy_net():
@@ -52,4 +52,3 @@ def italy_net():
     graph.add_edge(13, 12)
 
     return graph
-

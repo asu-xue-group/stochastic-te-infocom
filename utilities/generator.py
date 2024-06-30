@@ -1,5 +1,6 @@
-import networkx as nx
 import pickle
+
+import networkx as nx
 
 
 def dist(x, y):

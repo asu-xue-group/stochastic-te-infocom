@@ -1,6 +1,6 @@
+import networkx as nx
 from gurobipy import tupledict
 from networkx import DiGraph
-import networkx as nx
 
 
 def check_cycle(G: DiGraph, flows: tupledict):

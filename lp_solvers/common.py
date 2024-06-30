@@ -1,5 +1,7 @@
-import numpy as np
 import itertools
+
+import numpy as np
+
 
 # Return a set of edges that contains all the failed links if failure event q happened
 def E_f(q: int, srg: list):

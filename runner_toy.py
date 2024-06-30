@@ -1,9 +1,9 @@
 import logging
-import numpy as np
+
 import networkx as nx
+import numpy as np
+
 from graphs.toy import toy
-from lp_solvers.p1 import solve_p1
-from lp_solvers.p2 import solve_p2
 from lp_solvers.p4 import solve_p4
 from utilities.cycle_check import check_cycle
 
@@ -31,7 +31,7 @@ def main():
     beta = 0.945
 
     # Solve for the optimal gamma
-    gamma = solve_p1(commodities, G)
+    gamma = solve_p4(commodities, G)
     if gamma == -1:
         logging.critical('No flow can be established for the input.')
     else:
@@ -53,7 +53,7 @@ def main():
         curr_lambda = (lambda_ub + lambda_lb) / 2.0
         logging.info(f'Iteration {itr}, current lambda={curr_lambda} [{lambda_lb}-{lambda_ub}]')
 
-        W_curr, flows, m = solve_p2(commodities, srg, G, beta, gamma, curr_lambda)
+        W_curr, flows, m = solve_p4(commodities, srg, G, beta, gamma, curr_lambda)
         # the current model is infeasible, we need to increase the lambda to relax the constraints
         if not W_curr:
             lambda_lb = curr_lambda

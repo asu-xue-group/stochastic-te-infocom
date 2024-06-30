@@ -1,10 +1,10 @@
+import networkx as nx
+
 from graphs.toy import toy
 from utilities.cvar_calc import cvar
 from utilities.fileio import read_W
-import networkx as nx
 
 if __name__ == '__main__':
-
     G = toy()
     G = nx.to_directed(G)
 
