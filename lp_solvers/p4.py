@@ -6,7 +6,7 @@ from lp_solvers.common import *
 from utilities.print_formatting import print_flows
 
 
-def solve_p4(commodities: list, srg: list, G: DiGraph, W_opt, print_flow=False):
+def solve_p4(commodities: list, srg: list, G: DiGraph, W_opt, q, p, non_terminals, print_flow=False):
     # META VARIABLES
     with gp.Env(empty=True) as env:
         env.setParam('OutputFlag', 0)
@@ -19,19 +19,6 @@ def solve_p4(commodities: list, srg: list, G: DiGraph, W_opt, print_flow=False):
         I = range(len(commodities))
         Q = range(int(math.pow(2, num_srg)))
         E = G.edges()
-
-        # Calculate the probability of each failure event
-        p = np.zeros((len(Q),))
-        for i, z in enumerate([list(i) for i in itertools.product([0, 1], repeat=num_srg)]):
-            p[i] = calc_pq(z, srg)
-
-        # Cache the nodes after removing the source and the destination of a commodity
-        non_terminals = {}
-        for i in I:
-            all_nodes = set(G.nodes)
-            all_nodes.remove(commodities[i][0][0])
-            all_nodes.remove(commodities[i][0][1])
-            non_terminals[i] = all_nodes
 
         # VARIABLES
         # R^{+,q}_i(r)
@@ -47,18 +34,17 @@ def solve_p4(commodities: list, srg: list, G: DiGraph, W_opt, print_flow=False):
         m.addConstrs((R[i, q, e[0], e[1]] == 0 for q in Q for e in E_f(q, srg) for i in I), name='f')
 
         # Constraint (g): recovery flow must be smaller than original flow
-        m.addConstrs((R[i, q, e[0], e[1]] <= W[i, e[0], e[1]] for e in E for q in Q for i in I), name='g')
+        m.addConstrs((R[i, q, e[0], e[1]] <= W_opt[i, e[0], e[1]] for e in E for q in Q for i in I), name='g')
 
-        m.setObjective(gp.quicksum(R[i, q, e[0], e[1]] for e in E for i in I))
+        m.setObjective(gp.quicksum(R[i, q, e[0], e[1]] for e in E for i in I), GRB.MAXIMIZE)
 
         # m.write('test.lp')
         m.optimize()
 
         if print_flow:
-            print_flows(G, W, R, commodities, m, srg, p)
+            print_flows(G, W_opt, R, commodities, srg, p)
 
-        # if m.Status == GRB.OPTIMAL:
-        #     obj_val = alpha + (1 / (1 - beta)) * gp.quicksum(p[q] * phi[q] for q in Q)
-        #     return obj_val.getValue(), W, m
-        # else:
-        #     return None, None, None
+        if m.Status == GRB.OPTIMAL:
+            return m.ObjVal, R, m
+        else:
+            return None, None, None

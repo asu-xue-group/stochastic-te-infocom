@@ -5,7 +5,7 @@ from networkx import DiGraph
 from lp_solvers.common import *
 
 
-def solve_p5(commodities: list, srg: list, G: DiGraph, beta, gamma, _lambda):
+def solve_p5(commodities: list, srg: list, G: DiGraph, beta, gamma, _lambda, p, non_terminals):
     with gp.Env(empty=True) as env:
         env.setParam('OutputFlag', 0)
         env.start()
@@ -17,19 +17,6 @@ def solve_p5(commodities: list, srg: list, G: DiGraph, beta, gamma, _lambda):
         I = range(len(commodities))
         Q = range(int(math.pow(2, num_srg)))
         E = G.edges()
-
-        # Calculate the probability of each failure event
-        p = np.zeros((len(Q),))
-        for i, z in enumerate([list(i) for i in itertools.product([0, 1], repeat=num_srg)]):
-            p[i] = calc_pq(z, srg)
-
-        # Cache the nodes after removing the source and the destination of a commodity
-        non_terminals = {}
-        for i in I:
-            all_nodes = set(G.nodes)
-            all_nodes.remove(commodities[i][0][0])
-            all_nodes.remove(commodities[i][0][1])
-            non_terminals[i] = all_nodes
 
         # VARIABLES
         # W^+_i(r)
@@ -70,18 +57,20 @@ def solve_p5(commodities: list, srg: list, G: DiGraph, beta, gamma, _lambda):
         # Constraint (g): recovery flow must be smaller than original flow
         m.addConstrs((R[i, q, e[0], e[1]] <= W[i, e[0], e[1]] for e in E for q in Q for i in I), name='g')
 
-        # auxiliary one, Eq. 22
-        m.addConstrs(phi[q] >= gp.quicksum(W[i, e[0], e[1]] for i in I for e in G.in_edges(commodities[i][0][1])) -
+        # Constraint (j): aux variable phi
+        m.addConstrs((phi[q] >= gp.quicksum(W[i, e[0], e[1]] for i in I for e in G.in_edges(commodities[i][0][1])) -
                      gp.quicksum(W[i, e[0], e[1]] for i in I for e in G.out_edges(commodities[i][0][1])) -
                      gp.quicksum(R[i, q, e[0], e[1]] for i in I for e in G.in_edges(commodities[i][0][1])) +
                      gp.quicksum(R[i, q, e[0], e[1]] for i in I for e in G.out_edges(commodities[i][0][1]))
-                     - alpha for q in Q)
+                     - alpha for q in Q), name='j')
 
-        m.addConstr(alpha + 1 / (1 - beta) * gp.quicksum(p[q] * phi[q] for q in Q) <= _lambda)
+        # Constraint (k): lower bound of lambda
+        m.addConstr((alpha + 1 / (1 - beta) * gp.quicksum(p[q] * phi[q] for q in Q) <= _lambda), name='k')
 
         m.setObjective(gp.quicksum(W[i, e[0], e[1]] for e in G.edges for i in I), GRB.MINIMIZE)
         # m.write('test.lp')
 
+        m.optimize()
         if m.Status == GRB.OPTIMAL:
             return m.ObjVal, W, m
         else:

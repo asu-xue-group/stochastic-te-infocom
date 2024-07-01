@@ -1,7 +1,7 @@
 import networkx as nx
 
 from graphs.toy import toy
-from utilities.cvar_calc import cvar
+from utilities.cvar_calc import cvar_2
 from utilities.fileio import read_W
 
 if __name__ == '__main__':
@@ -24,6 +24,6 @@ if __name__ == '__main__':
     W = read_W(G, I, '0.94.txt')
 
     beta = 0
-    res = cvar(commodities, srg, G, W, beta)
+    res = cvar_2(commodities, srg, G, W, beta)
 
     print(f'CVaR({beta}) = {res}')
