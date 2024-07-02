@@ -21,9 +21,9 @@ if __name__ == '__main__':
     # Shared risk groups
     srg = [(((3, 5),), 0.95), (((4, 6),), 0.05)]
     I = range(len(commodities))
-    W = read_W(G, I, '0.94.txt')
+    W = read_W(G, I, 'test_input/0.94.txt')
 
-    beta = 0
+    beta = 0.945
     res = cvar_2(commodities, srg, G, W, beta)
 
     print(f'CVaR({beta}) = {res}')

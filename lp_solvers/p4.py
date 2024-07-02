@@ -10,6 +10,7 @@ def solve_p4(commodities: list, srg: list, G: DiGraph, W_opt, q, p, non_terminal
     # META VARIABLES
     with gp.Env(empty=True) as env:
         env.setParam('OutputFlag', 0)
+        env.setParam('Method', 0)
         env.start()
         m = gp.Model(env=env)
         num_srg = len(srg)

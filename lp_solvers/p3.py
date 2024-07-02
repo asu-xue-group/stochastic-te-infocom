@@ -7,6 +7,7 @@ from networkx import DiGraph
 def solve_p3(commodities: list, G: DiGraph):
     with gp.Env(empty=True) as env:
         env.setParam('OutputFlag', 0)
+        env.setParam('Method', 0)
         env.start()
         m = gp.Model(env=env)
 

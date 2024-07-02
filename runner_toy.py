@@ -12,10 +12,11 @@ from lp_solvers.p4 import solve_p4
 from lp_solvers.p5 import solve_p5
 from utilities.cycle_check import check_cycle
 from utilities.cvar_calc import cvar_2, cvar_3
+from utilities.fileio import print_model
 from utilities.print_formatting import print_flows
 
 
-def main():
+def main(beta=None):
     G = toy()
     G = nx.to_directed(G)
     logging.getLogger().setLevel(logging.DEBUG)
@@ -51,8 +52,9 @@ def main():
 
     # CVaR beta
     # beta @ 0.945 may be interesting
-    beta = 0.945
-
+    # Using simplex, different behavior can be observed at
+    # 0.94499999, 0.944999999, 0.9449999999
+    beta = 0.944999999
     # Solve for the optimal gamma
     gamma = solve_p3(commodities, G)
     if gamma == -1:
@@ -68,18 +70,20 @@ def main():
     # Solve for lambda_opt via bisection
     lambda_ub = W_max
     lambda_lb = 0
+    # Previously epsilon is at 1e-6
     epsilon = 1e-6
     itr = 1
 
     best_lambda = -1
     best_m = None
     best_flows = None
+    best_phi = None
 
     while lambda_ub - lambda_lb > epsilon:
         curr_lambda = (lambda_ub + lambda_lb) / 2.0
         logging.info(f'Iteration {itr}, current lambda={curr_lambda} [{lambda_lb}-{lambda_ub}]')
 
-        W_curr, flows, m = solve_p5(commodities, srg, G, beta, gamma, curr_lambda, p, non_terminals)
+        W_curr, flows, phi, m = solve_p5(commodities, srg, G, beta, gamma, curr_lambda, p, non_terminals)
         # the current model is infeasible, we need to increase the lambda to relax the constraints
         if not W_curr:
             lambda_lb = curr_lambda
@@ -96,6 +100,7 @@ def main():
                 best_lambda = curr_lambda
                 best_flows = flows
                 best_m = m
+                best_phi = phi
 
                 lambda_ub = curr_lambda
                 logging.debug('Acyclic solution found, decreasing lambda')
@@ -110,6 +115,8 @@ def main():
         logging.info(f'\nOptimal lambda (CVaR) is {best_lambda:.4f}\n')
 
     best_m.update()
+
+    # print_model(beta, best_phi, best_m.getVarByName('alpha').x, best_lambda, p)
     tmp = {}
     for k, v in best_flows.items():
         tmp[k] = v.x

@@ -1,3 +1,5 @@
+import logging
+
 import gurobipy as gp
 from gurobipy import *
 from networkx import DiGraph
@@ -8,6 +10,7 @@ from lp_solvers.common import *
 def solve_p5(commodities: list, srg: list, G: DiGraph, beta, gamma, _lambda, p, non_terminals):
     with gp.Env(empty=True) as env:
         env.setParam('OutputFlag', 0)
+        env.setParam('Method', 0)
         env.start()
         m = gp.Model(env=env)
 
@@ -72,6 +75,7 @@ def solve_p5(commodities: list, srg: list, G: DiGraph, beta, gamma, _lambda, p, 
 
         m.optimize()
         if m.Status == GRB.OPTIMAL:
-            return m.ObjVal, W, m
+            logging.info(f'alpha={alpha.x}')
+            return m.ObjVal, W, phi, m
         else:
-            return None, None, None
+            return None, None, None, None
