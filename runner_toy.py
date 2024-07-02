@@ -5,11 +5,9 @@ import math
 import networkx as nx
 import numpy as np
 
-from graphs.toy import toy
+import graphs.toy as toy
 from lp_solvers.common import calc_pq
-from lp_solvers.p3 import solve_p3
-from lp_solvers.p4 import solve_p4
-from lp_solvers.p5 import solve_p5
+from lp_solvers import *
 from utilities.cycle_check import check_cycle
 from utilities.cvar_calc import cvar_2, cvar_3
 from utilities.fileio import print_model
@@ -17,7 +15,7 @@ from utilities.print_formatting import print_flows
 
 
 def main(beta=None):
-    G = toy()
+    G = toy.graph()
     G = nx.to_directed(G)
     logging.getLogger().setLevel(logging.DEBUG)
 
@@ -25,14 +23,11 @@ def main(beta=None):
     # nx.draw(G, with_labels=True, font_weight='bold')
     # plt.show()
 
-    # Commodities
-    commodities = [
-        ((1, 7), 2),
-        ((2, 8), 2)
-    ]
+    commodities = toy.commodities()
+    srg = toy.srg()
+    paths = toy.paths()
+    budget = toy.budget()
 
-    # Shared risk groups
-    srg = [(((3, 5),), 0.95), (((4, 6),), 0.05)]
     num_srg = len(srg)
     Q = range(int(math.pow(2, num_srg)))
     I = range(len(commodities))
@@ -54,7 +49,15 @@ def main(beta=None):
     # beta @ 0.945 may be interesting
     # Using simplex, different behavior can be observed at
     # 0.94499999, 0.944999999, 0.9449999999
-    beta = 0.944999999
+    beta = 0.95
+    gamma = 1.0
+
+    # Solve TeaVaR w/ budget constraints, min CVaR
+    solve_p6(commodities, paths, srg, gamma, beta, p, budget, G)
+
+    # Solve TeaVaR w/ budget constraints, Max EXT
+    solve_p7(commodities, paths, srg, gamma, p, budget, G)
+
     # Solve for the optimal gamma
     gamma = solve_p3(commodities, G)
     if gamma == -1:
