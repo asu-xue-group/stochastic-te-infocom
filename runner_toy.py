@@ -73,7 +73,7 @@ def main(beta=None):
 
     print('Part 3: LP reformulation =====================')
     # Solve for the optimal gamma
-    gamma = solve_p3(commodities, G)
+    gamma = solve_p3(commodities, budget, G)
     if gamma == -1:
         logging.critical('No flow can be established for the input.')
         exit(-1)

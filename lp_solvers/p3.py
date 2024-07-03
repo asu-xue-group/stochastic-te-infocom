@@ -4,7 +4,7 @@ from networkx import DiGraph
 
 
 # Solve the multi-commodities max-flow for the
-def solve_p3(commodities: list, G: DiGraph):
+def solve_p3(commodities: list, budget, G: DiGraph):
     with gp.Env(empty=True) as env:
         env.setParam('OutputFlag', 0)
         env.setParam('Method', 0)
@@ -41,6 +41,9 @@ def solve_p3(commodities: list, G: DiGraph):
         # the "if" clause is added to prevent dupes
         m.addConstrs((gp.quicksum(W[i, e[0], e[1]] + W[i, e[1], e[0]] for i in I) <= G[e[0]][e[1]]['cap']
                       for e in E if e[0] < e[1]), name='c')
+
+        # Constraint (extra): budget constraint
+        m.addConstrs((gp.quicksum(G[e[0]][e[1]]['cost'] * W[i, e[0], e[1]] for e in E) <= budget[i] for i in I), name='extra')
 
         m.setObjective(gamma, GRB.MAXIMIZE)
 
