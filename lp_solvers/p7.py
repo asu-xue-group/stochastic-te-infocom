@@ -2,42 +2,7 @@ import gurobipy as gp
 from gurobipy import *
 from networkx import DiGraph
 import numpy as np
-
-# Calculate the edge-path mapping (L in the paper)
-def calculate_l(G: DiGraph, paths: list):
-    edges = list(G.edges.data())
-
-    # Set up the dictionary that stores the edge-path mapping
-    L = dict()
-    for edge in edges:
-        # Needs to add both forward and backward edges if undirected graph
-        L[(edge[0], edge[1])] = set()
-        # L[(edge[1], edge[0])] = set()
-    for path_grp in paths:
-        for path in path_grp:
-            for i in range(len(path) - 2 + 1):
-                L[tuple(path[i:i + 2])].add(tuple(path))
-    return L
-
-
-# Return an indicator that, if failure event q happened, whether the path r is affected
-def y(r: tuple, q: int, srg: list, l: dict):
-    # Convert q to a binary array
-    indicators = np.array([int(i) for i in bin(q)[2:]])
-    indicators = np.insert(indicators, 0, np.zeros(len(srg) - len(indicators)))
-    failed_srg = [srg[i][0] for i in range(len(indicators)) if indicators[i] == 1]
-    for f_srg in failed_srg:
-        if r in l[f_srg[0]]:
-            return 0
-    return 1
-
-
-# Return an indicator to show whether the path r uses the edge e
-def L(l: dict, r: tuple, e: tuple):
-    if r in l[e]:
-        return 1
-    else:
-        return 0
+from lp_solvers.common import *
 
 
 def solve_p7(commodities: list, paths: list, srg: list, gamma, p: list, budget: list, G: DiGraph):
@@ -59,10 +24,6 @@ def solve_p7(commodities: list, paths: list, srg: list, gamma, p: list, budget: 
         # VARIABLES
         # W^+_i(r)
         W = m.addVars(I, R, name="W")
-        # alpha_i
-        alpha = m.addVar(name='alpha')
-        # phi^q_i
-        phi = m.addVars(Q, name='phi')
 
         # CONSTRAINTS
         # commodities = i -> ((s, t), d)
@@ -83,3 +44,5 @@ def solve_p7(commodities: list, paths: list, srg: list, gamma, p: list, budget: 
 
         # Optimize model
         m.optimize()
+
+        return W, m

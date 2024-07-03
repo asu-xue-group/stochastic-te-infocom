@@ -34,7 +34,7 @@ def commodities() -> list[tuple]:
 
 # Shared risk groups
 def srg() -> list[tuple]:
-    return [(((3, 5),), 0.95), (((4, 6),), 0.05)]
+    return [(((3, 5),), 0.3), (((4, 6),), 0.05)]
 
 
 def paths() -> list[list]:
@@ -45,4 +45,4 @@ def paths() -> list[list]:
 
 
 def budget() -> list:
-    return [9, 8]
+    return [120, 100]

@@ -11,13 +11,13 @@ from lp_solvers import *
 from utilities.cycle_check import check_cycle
 from utilities.cvar_calc import cvar_2, cvar_3
 from utilities.fileio import print_model
-from utilities.print_formatting import print_flows
+from utilities.print_formatting import *
 
 
 def main(beta=None):
     G = toy.graph()
     G = nx.to_directed(G)
-    logging.getLogger().setLevel(logging.DEBUG)
+    # logging.getLogger().setLevel(logging.DEBUG)
 
     # Draw the network / sanity check
     # nx.draw(G, with_labels=True, font_weight='bold')
@@ -49,15 +49,29 @@ def main(beta=None):
     # beta @ 0.945 may be interesting
     # Using simplex, different behavior can be observed at
     # 0.94499999, 0.944999999, 0.9449999999
-    beta = 0.95
+    beta = 0
     gamma = 1.0
 
     # Solve TeaVaR w/ budget constraints, min CVaR
-    solve_p6(commodities, paths, srg, gamma, beta, p, budget, G)
+    W, m = solve_p6(commodities, paths, srg, gamma, beta, p, budget, G)
+    m.update()
+    tmp = {}
+    for k, v in W.items():
+        tmp[k] = v.x
+    print('Part 1: TeaVar w/ budget constraints (min CVaR)=======================')
+    print_flows_te(G, tmp, paths, commodities, srg, p, beta)
 
     # Solve TeaVaR w/ budget constraints, Max EXT
-    solve_p7(commodities, paths, srg, gamma, p, budget, G)
 
+    print('Part 2: TeaVar w/ budget constraints (max EXT)=======================')
+    W, m = solve_p7(commodities, paths, srg, gamma, p, budget, G)
+    m.update()
+    tmp = {}
+    for k, v in W.items():
+        tmp[k] = v.x
+    print_flows_te(G, tmp, paths, commodities, srg, p, beta)
+
+    print('Part 3: LP reformulation =====================')
     # Solve for the optimal gamma
     gamma = solve_p3(commodities, G)
     if gamma == -1:
@@ -86,7 +100,7 @@ def main(beta=None):
         curr_lambda = (lambda_ub + lambda_lb) / 2.0
         logging.info(f'Iteration {itr}, current lambda={curr_lambda} [{lambda_lb}-{lambda_ub}]')
 
-        W_curr, flows, phi, m = solve_p5(commodities, srg, G, beta, gamma, curr_lambda, p, non_terminals)
+        W_curr, flows, phi, m = solve_p5(commodities, srg, G, beta, gamma, curr_lambda, budget, p, non_terminals)
         # the current model is infeasible, we need to increase the lambda to relax the constraints
         if not W_curr:
             lambda_lb = curr_lambda

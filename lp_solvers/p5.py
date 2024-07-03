@@ -7,7 +7,7 @@ from networkx import DiGraph
 from lp_solvers.common import *
 
 
-def solve_p5(commodities: list, srg: list, G: DiGraph, beta, gamma, _lambda, p, non_terminals):
+def solve_p5(commodities: list, srg: list, G: DiGraph, beta, gamma, _lambda, budget, p, non_terminals):
     with gp.Env(empty=True) as env:
         env.setParam('OutputFlag', 0)
         env.setParam('Method', 0)

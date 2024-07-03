@@ -3,7 +3,6 @@ from gurobipy import *
 from networkx import DiGraph
 
 from lp_solvers.common import *
-from lp_solvers.p4 import solve_p4
 
 
 def cvar_2(commodities: list, srg: list, G: DiGraph, W, beta, p, non_terminals):
@@ -84,5 +83,34 @@ def cvar_3(commodities: list, srg: list, G: DiGraph, W, R, beta, p):
         return m.ObjVal
 
 
-def recovery(commodities: list, srg: list, G: DiGraph, W, q):
-    solve_p4(commodities, srg, G, W, q)
+def cvar_te(commodities: list, paths: list, srg: list, beta, p: list, W, G: DiGraph):
+    with gp.Env(empty=True) as env:
+        env.setParam('OutputFlag', 0)
+        env.setParam('Method', 0)
+        env.start()
+        m = gp.Model(env=env)
+
+        num_srg = len(srg)
+        # These variables are used to index the commodities, paths, and SRGs (for Gurobi variables).
+        # Actual data is stored in their respective variables
+        I = range(len(commodities))
+        Q = range(int(math.pow(2, num_srg)))
+        R = range(len(paths[0]))
+        l = calculate_l(G, paths)
+
+        # VARIABLES
+        # alpha_i
+        alpha = m.addVar(name='alpha')
+        # phi^q_i
+        phi = m.addVars(Q, name='phi')
+
+        # CONSTRAINTS
+        # Constraint A4: phi auxiliary variable for CVaR
+        m.addConstrs((phi[q] >= gp.quicksum(W[i, r] * (1 - y(paths[i][r], q, srg, l)) - alpha for r in R for i in I) for q in Q), name='A4')
+
+        m.setObjective(alpha + 1 / (1 - beta) * gp.quicksum(p[q] * phi[q] for q in Q), GRB.MINIMIZE)
+
+        # Optimize model
+        m.optimize()
+
+        return m.ObjVal, alpha.x
