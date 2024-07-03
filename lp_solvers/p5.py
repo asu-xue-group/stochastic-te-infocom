@@ -1,8 +1,5 @@
-import logging
-
 import gurobipy as gp
 from gurobipy import *
-from networkx import DiGraph
 
 from lp_solvers.common import *
 
@@ -62,16 +59,17 @@ def solve_p5(commodities: list, srg: list, G: DiGraph, beta, gamma, _lambda, bud
 
         # Constraint (j): aux variable phi
         m.addConstrs((phi[q] >= gp.quicksum(W[i, e[0], e[1]] for i in I for e in G.in_edges(commodities[i][0][1])) -
-                     gp.quicksum(W[i, e[0], e[1]] for i in I for e in G.out_edges(commodities[i][0][1])) -
-                     gp.quicksum(R[i, q, e[0], e[1]] for i in I for e in G.in_edges(commodities[i][0][1])) +
-                     gp.quicksum(R[i, q, e[0], e[1]] for i in I for e in G.out_edges(commodities[i][0][1]))
-                     - alpha for q in Q), name='j')
+                      gp.quicksum(W[i, e[0], e[1]] for i in I for e in G.out_edges(commodities[i][0][1])) -
+                      gp.quicksum(R[i, q, e[0], e[1]] for i in I for e in G.in_edges(commodities[i][0][1])) +
+                      gp.quicksum(R[i, q, e[0], e[1]] for i in I for e in G.out_edges(commodities[i][0][1]))
+                      - alpha for q in Q), name='j')
 
         # Constraint (k): lower bound of lambda
         m.addConstr((alpha + 1 / (1 - beta) * gp.quicksum(p[q] * phi[q] for q in Q) <= _lambda), name='k')
 
         # Constraint (extra): budget constraint
-        m.addConstrs((gp.quicksum(G[e[0]][e[1]]['cost'] * W[i, e[0], e[1]] for e in E) <= budget[i] for i in I), name='extra')
+        m.addConstrs((gp.quicksum(G[e[0]][e[1]]['cost'] * W[i, e[0], e[1]] for e in E) <= budget[i] for i in I),
+                     name='extra')
 
         m.setObjective(gp.quicksum(W[i, e[0], e[1]] for e in G.edges for i in I), GRB.MINIMIZE)
         # m.write('test.lp')

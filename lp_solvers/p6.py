@@ -1,7 +1,6 @@
 import gurobipy as gp
 from gurobipy import *
-from networkx import DiGraph
-import numpy as np
+
 from lp_solvers.common import *
 
 
@@ -38,14 +37,16 @@ def solve_p6(commodities: list, paths: list, srg: list, gamma, beta, p: list, bu
 
         # Constraint A2: capacity constraints
         m.addConstrs((gp.quicksum(W[i, r] * L(l, paths[i][r], e) for r in R for i in I) <= G[e[0]][e[1]]['cap']
-                     for e in E), name='A2')
+                      for e in E), name='A2')
 
         # Constraint A3: cost constraints
         m.addConstrs((gp.quicksum(W[i, r] * L(l, paths[i][r], e) * G[e[0]][e[1]]['cost']
-                                 for e in E for r in R) <= budget[i] for i in I), name='A3')
+                                  for e in E for r in R) <= budget[i] for i in I), name='A3')
 
         # Constraint A4: phi auxiliary variable for CVaR
-        m.addConstrs((phi[q] >= gp.quicksum(W[i, r] * (1 - y(paths[i][r], q, srg, l)) - alpha for r in R for i in I) for q in Q), name='A4')
+        m.addConstrs(
+            (phi[q] >= gp.quicksum(W[i, r] * (1 - y(paths[i][r], q, srg, l)) - alpha for r in R for i in I) for q in Q),
+            name='A4')
 
         m.setObjective(alpha + 1 / (1 - beta) * gp.quicksum(p[q] * phi[q] for q in Q), GRB.MINIMIZE)
 

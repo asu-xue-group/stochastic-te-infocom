@@ -38,9 +38,9 @@ def print_model(beta, phi, alpha, _lambda, p):
         print(f'phi[{i}]={phi[i].x}')
         sum += phi[i].x * p[i]
     print(f'summation={sum}')
-    k1 = alpha + (1/(1-beta)) * sum
-    k2 = alpha + (1/(1-0.944999999)) * sum
-    k3 = alpha + (1/(1-0.9449999999)) * sum
+    k1 = alpha + (1 / (1 - beta)) * sum
+    k2 = alpha + (1 / (1 - 0.944999999)) * sum
+    k3 = alpha + (1 / (1 - 0.9449999999)) * sum
     print(f'(k) LHS={k1}')
     print(f'diff1={k2 - k1}')
     print(f'(k) LHS w/ beta_6x9={k2}')

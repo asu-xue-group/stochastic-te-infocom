@@ -1,6 +1,5 @@
 import gurobipy as gp
 from gurobipy import *
-from networkx import DiGraph
 
 from lp_solvers.common import *
 from utilities.print_formatting import print_flows

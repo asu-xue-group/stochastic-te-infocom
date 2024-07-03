@@ -43,7 +43,8 @@ def solve_p3(commodities: list, budget, G: DiGraph):
                       for e in E if e[0] < e[1]), name='c')
 
         # Constraint (extra): budget constraint
-        m.addConstrs((gp.quicksum(G[e[0]][e[1]]['cost'] * W[i, e[0], e[1]] for e in E) <= budget[i] for i in I), name='extra')
+        m.addConstrs((gp.quicksum(G[e[0]][e[1]]['cost'] * W[i, e[0], e[1]] for e in E) <= budget[i] for i in I),
+                     name='extra')
 
         m.setObjective(gamma, GRB.MAXIMIZE)
 
