@@ -45,7 +45,7 @@ def solve_p6(commodities: list, paths: list, srg: list, gamma, beta, p: list, bu
 
         # Constraint A4: phi auxiliary variable for CVaR
         m.addConstrs(
-            (phi[q] >= gp.quicksum(W[i, r] * (1 - y(paths[i][r], q, srg, l)) - alpha for r in R for i in I) for q in Q),
+            (phi[q] >= gp.quicksum(W[i, r] * (1 - y(paths[i][r], q, srg, l)) for r in R for i in I) - alpha for q in Q),
             name='A4')
 
         m.setObjective(alpha + 1 / (1 - beta) * gp.quicksum(p[q] * phi[q] for q in Q), GRB.MINIMIZE)

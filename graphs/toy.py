@@ -45,4 +45,5 @@ def paths() -> list[list]:
 
 
 def budget() -> list:
-    return [120, 100]
+    return [9, 9]
+    # return [120, 120]

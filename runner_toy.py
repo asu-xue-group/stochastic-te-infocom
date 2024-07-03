@@ -41,7 +41,7 @@ def main(beta=None):
     # beta @ 0.945 may be interesting
     # Using simplex, different behavior can be observed at
     # 0.94499999, 0.944999999, 0.9449999999
-    beta = 0
+    beta = 0.1
     gamma = 1.0
 
     # Solve TeaVaR w/ budget constraints, min CVaR
