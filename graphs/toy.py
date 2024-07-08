@@ -15,26 +15,26 @@ def graph() -> Graph:
 
     g.add_edge(1, 3, cap=2, cost=1)
     g.add_edge(2, 4, cap=2, cost=1)
-    g.add_edge(3, 4, cap=3.8, cost=0.5)
-    g.add_edge(3, 5, cap=3.8, cost=1)
-    g.add_edge(4, 6, cap=3.8, cost=2)
-    g.add_edge(5, 6, cap=3.8, cost=0.5)
-    g.add_edge(5, 7, cap=2, cost=1)
-    g.add_edge(6, 8, cap=2, cost=1)
+    g.add_edge(3, 4, cap=3.8, cost=0.8)
+    g.add_edge(3, 5, cap=3.7, cost=0.7)
+    g.add_edge(4, 6, cap=3.6, cost=0.6)
+    g.add_edge(5, 6, cap=3.5, cost=0.5)
+    g.add_edge(5, 7, cap=2, cost=0.5)
+    g.add_edge(6, 8, cap=2, cost=0.5)
 
     return g
 
 
 def commodities() -> list[tuple]:
     return [
-        ((1, 7), 2),
-        ((2, 8), 2)
+        ((1, 7), 3),
+        ((2, 8), 3)
     ]
 
 
 # Shared risk groups
 def srg() -> list[tuple]:
-    return [(((3, 5),), 0.3), (((4, 6),), 0.05)]
+    return [(((3, 5),), 0.30), (((4, 6),), 0.05)]
 
 
 def paths() -> list[list]:
@@ -45,5 +45,5 @@ def paths() -> list[list]:
 
 
 def budget() -> list:
-    return [9, 9]
+    return [6, 6]
     # return [120, 120]

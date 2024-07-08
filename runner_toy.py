@@ -1,6 +1,6 @@
 import networkx as nx
 
-import graphs.toy as toy
+import graphs.toy_alt as toy
 from lp_solvers import *
 from utilities.cycle_check import check_cycle
 from utilities.print_formatting import *
@@ -41,8 +41,15 @@ def main(beta=None):
     # beta @ 0.945 may be interesting
     # Using simplex, different behavior can be observed at
     # 0.94499999, 0.944999999, 0.9449999999
-    beta = 0.1
-    gamma = 1.0
+    beta = 0
+
+    # Solve for the optimal gamma
+    gamma = solve_p3(commodities, budget, G)
+    if gamma == -1:
+        logging.critical('No flow can be established for the input.')
+        exit(-1)
+    else:
+        logging.info(f'gamma={gamma}')
 
     # Solve TeaVaR w/ budget constraints, min CVaR
     W, m = solve_p6(commodities, paths, srg, gamma, beta, p, budget, G)
@@ -55,7 +62,7 @@ def main(beta=None):
 
     # Solve TeaVaR w/ budget constraints, Max EXT
 
-    print('Part 2: TeaVar w/ budget constraints (max EXT)=======================')
+    print('Part 2: Max EXT w/ budget constraints=======================')
     W, m = solve_p7(commodities, paths, srg, gamma, p, budget, G)
     m.update()
     tmp = {}
@@ -64,13 +71,7 @@ def main(beta=None):
     print_flows_te(G, tmp, paths, commodities, srg, p, beta)
 
     print('Part 3: LP reformulation =====================')
-    # Solve for the optimal gamma
-    gamma = solve_p3(commodities, budget, G)
-    if gamma == -1:
-        logging.critical('No flow can be established for the input.')
-        exit(-1)
-    else:
-        logging.info(f'gamma={gamma}')
+
 
     # Maximum flow
     W_max = np.sum([gamma * c[1] for c in commodities])
@@ -124,6 +125,7 @@ def main(beta=None):
         logging.info(f'\nOptimal lambda (CVaR) is {best_lambda:.4f}\n')
 
     best_m.update()
+    alpha = best_m.getVarByName('alpha')
 
     # print_model(beta, best_phi, best_m.getVarByName('alpha').x, best_lambda, p)
     tmp = {}
@@ -142,7 +144,8 @@ def main(beta=None):
     cvar = cvar_2(commodities, srg, G, tmp, beta, p, non_terminals)
 
     print_flows(G, tmp, final_R, commodities, srg, p)
-    print(f'Final CVaR = {cvar}')
+    print(f'Final CVaR = {cvar:.3f}')
+    print(f'alpha = {alpha.x:.3f}')
 
 
 if __name__ == '__main__':

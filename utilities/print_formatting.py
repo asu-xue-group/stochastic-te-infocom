@@ -25,6 +25,7 @@ def print_flows(G, W_plus, R_plus, commodities, srg, p):
     if R_plus is not None:
         print('\n==========================================')
         print('Recovery Flow')
+        ext = 0
         for q in Q:
             indicators = np.array([int(i) for i in bin(q)[2:]])
             indicators = np.insert(indicators, 0, np.zeros(len(srg) - len(indicators)))
@@ -49,8 +50,10 @@ def print_flows(G, W_plus, R_plus, commodities, srg, p):
                         print(f'({k[2]}, {k[3]}), {v:.3f} | ', end='')
                 print('\n')
 
-            print(f'Total throughput: {total:.3f}')
+            ext += total * p[q]
+            print(f'Total throughput = {total:.3f}')
             print(f'----------------------------------------')
+        print(f'Expected throughput = {ext:.3f}')
 
 
 def print_flows_te(G, W, paths, commodities, srg, p, beta):
