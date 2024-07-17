@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import networkx as nx
-from graphs.toy import toy
+import graphs.toy_alt as toy
 from lp_solvers.p2_opt import solve_p2
 from lp_solvers.p4_opt import solve_p4
 
@@ -13,7 +13,7 @@ def L(edge: tuple, path: list, mapping: dict) -> bool:
 
 
 def main():
-    G = toy()
+    G = toy.graph()
     G = nx.to_directed(G)
 
     # Draw the network / sanity check
@@ -21,13 +21,10 @@ def main():
     # plt.show()
 
     # Commodities
-    commodities = [
-        ((1, 7), 2),
-        ((2, 8), 2)
-    ]
+    commodities = toy.commodities()
 
     # Shared risk groups
-    srg = [(((3, 5),), 0.95), (((4, 6),), 0.05)]
+    srg = toy.srg()
 
     # Solve the LP
     opt_val = solve_p2(commodities, srg, G)
