@@ -20,8 +20,8 @@ def solve_p3(G: SrgGraph):
         non_terminals = {}
         for i in I:
             all_nodes = set(g.nodes)
-            all_nodes.remove(commodities[i].edge.u)
-            all_nodes.remove(commodities[i].edge.v)
+            all_nodes.remove(commodities[i].s)
+            all_nodes.remove(commodities[i].t)
             non_terminals[i] = all_nodes
 
         # VARIABLES
@@ -36,8 +36,8 @@ def solve_p3(G: SrgGraph):
                       for i in I for v in non_terminals[i]), name='a')
 
         # Constraint (b): bandwidth requirements
-        m.addConstrs((gp.quicksum(W[i, e[0], e[1]] for e in g.in_edges(commodities[i].edge.v)) -
-                      gp.quicksum(W[i, e[0], e[1]] for e in g.out_edges(commodities[i].edge.v)) >= gamma *
+        m.addConstrs((gp.quicksum(W[i, e[0], e[1]] for e in g.in_edges(commodities[i].t)) -
+                      gp.quicksum(W[i, e[0], e[1]] for e in g.out_edges(commodities[i].t)) >= gamma *
                       commodities[i].demand
                       for i in I), name='b')
 

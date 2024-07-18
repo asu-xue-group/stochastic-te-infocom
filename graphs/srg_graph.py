@@ -4,8 +4,7 @@ from itertools import islice
 import networkx as nx
 from networkx import DiGraph
 
-Edge = namedtuple('Edge', ['u', 'v'])
-Commodity = namedtuple('Commodity', ['edge', 'demand', 'budget'])
+Commodity = namedtuple('Commodity', ['s', 't', 'demand', 'budget'])
 Srg = namedtuple('Srg', ['edges', 'prob'])
 
 
@@ -24,13 +23,13 @@ class SrgGraph:
             if k == 0:
                 results = []
                 for c in self.commodities:
-                    tmp = list(nx.all_simple_paths(self.graph, c.edge.u, c.edge.v))
+                    tmp = list(nx.all_simple_paths(self.graph, c.s, c.t))
                     results.append(tmp)
                 return results
             else:
                 results = []
                 for c in self.commodities:
-                    tmp = list(islice(nx.shortest_simple_paths(self.graph, c.edge.u, c.edge.v), k))
+                    tmp = list(islice(nx.shortest_simple_paths(self.graph, c.s, c.t), k))
                     results.append(tmp)
                 return results
         except nx.NetworkXNoPath:

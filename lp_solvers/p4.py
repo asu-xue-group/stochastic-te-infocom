@@ -47,7 +47,7 @@ def solve_p4(G: SrgGraph, W_opt, q, p, non_terminals, print_flow=False):
         m.optimize()
 
         if print_flow:
-            print_flows(g, W_opt, R, commodities, srg, p)
+            print_flows(G, W_opt, R, p)
 
         if m.Status == GRB.OPTIMAL:
             return m.ObjVal, R, m

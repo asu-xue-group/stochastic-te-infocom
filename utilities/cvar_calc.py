@@ -39,10 +39,10 @@ def cvar_2(G: SrgGraph, W, beta, p, non_terminals):
         m.addConstrs((R[i, q, e[0], e[1]] <= W[i, e[0], e[1]] for e in E for q in Q for i in I), name='g')
 
         # Constraint (3.12) / (j)
-        m.addConstrs((phi[q] >= gp.quicksum(W[i, e[0], e[1]] for i in I for e in g.in_edges(commodities[i].edge.v)) -
-                      gp.quicksum(W[i, e[0], e[1]] for i in I for e in g.out_edges(commodities[i].edge.v)) -
-                      gp.quicksum(R[i, q, e[0], e[1]] for i in I for e in g.in_edges(commodities[i].edge.v)) +
-                      gp.quicksum(R[i, q, e[0], e[1]] for i in I for e in g.out_edges(commodities[i].edge.v))
+        m.addConstrs((phi[q] >= gp.quicksum(W[i, e[0], e[1]] for i in I for e in g.in_edges(commodities[i].t)) -
+                      gp.quicksum(W[i, e[0], e[1]] for i in I for e in g.out_edges(commodities[i].t)) -
+                      gp.quicksum(R[i, q, e[0], e[1]] for i in I for e in g.in_edges(commodities[i].t)) +
+                      gp.quicksum(R[i, q, e[0], e[1]] for i in I for e in g.out_edges(commodities[i].t))
                       - alpha for q in Q), name='j')
 
         # Constraint (3.13) / (k)
@@ -74,10 +74,10 @@ def cvar_3(G: SrgGraph, W, R, beta, p):
         _lambda = m.addVar(name='lambda')
 
         # Constraint (3.8) / (j)
-        m.addConstrs((phi[q] >= gp.quicksum(W[i, e[0], e[1]] for i in I for e in g.in_edges(commodities[i].edge.v)) -
-                      gp.quicksum(W[i, e[0], e[1]] for i in I for e in g.out_edges(commodities[i].edge.v)) -
-                      gp.quicksum(R[i, q, e[0], e[1]] for i in I for e in g.in_edges(commodities[i].edge.v)) +
-                      gp.quicksum(R[i, q, e[0], e[1]] for i in I for e in g.out_edges(commodities[i].edge.v))
+        m.addConstrs((phi[q] >= gp.quicksum(W[i, e[0], e[1]] for i in I for e in g.in_edges(commodities[i].t)) -
+                      gp.quicksum(W[i, e[0], e[1]] for i in I for e in g.out_edges(commodities[i].t)) -
+                      gp.quicksum(R[i, q, e[0], e[1]] for i in I for e in g.in_edges(commodities[i].t)) +
+                      gp.quicksum(R[i, q, e[0], e[1]] for i in I for e in g.out_edges(commodities[i].t))
                       - alpha for q in Q), name='j')
 
         # Constraint (3.9) / (k)

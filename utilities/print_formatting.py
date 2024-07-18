@@ -15,8 +15,8 @@ def print_flows(G: SrgGraph, W, R, p):
     # check = all([sum([W_plus[i, e[0], e[1]] for i in I]) <= G[e[0]][e[1]]['cap'] for e in E])
     # print(f'Capacity check: {check}')
     for i in I:
-        sat = (sum([W[i, e[0], e[1]] for e in g.in_edges(commodities[i].edge.v)])
-               - sum([W[i, e[0], e[1]] for e in g.out_edges(commodities[i].edge.v)]))
+        sat = (sum([W[i, e[0], e[1]] for e in g.in_edges(commodities[i].t)])
+               - sum([W[i, e[0], e[1]] for e in g.out_edges(commodities[i].t)]))
         print(f'Commodity {i} satisfied: {sat} out of {commodities[i].demand}')
 
         print(f'Flow for commodity {i}: ', end='')
@@ -42,8 +42,8 @@ def print_flows(G: SrgGraph, W, R, p):
             # print(f'Capacity check: {check}')
             total = 0
             for i in I:
-                sat = (sum([R.get((i, q, e[0], e[1]), 0) for e in g.in_edges(commodities[i].edge.v)])
-                       - sum([R.get((i, q, e[0], e[1]), 0) for e in g.out_edges(commodities[i].edge.v)]))
+                sat = (sum([R.get((i, q, e[0], e[1]), 0) for e in g.in_edges(commodities[i].t)])
+                       - sum([R.get((i, q, e[0], e[1]), 0) for e in g.out_edges(commodities[i].t)]))
                 print(f'Commodity {i} satisfied: {sat:.3f} out of {commodities[i].demand}')
                 total = total + sat
 

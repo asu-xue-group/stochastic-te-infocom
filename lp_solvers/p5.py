@@ -40,8 +40,8 @@ def solve_p5(G: SrgGraph, beta, gamma, _lambda, p, non_terminals):
                       for i in I for v in non_terminals[i]), name='a')
 
         # Constraint (b): bandwidth requirements
-        m.addConstrs((gp.quicksum(W[i, e[0], e[1]] for e in g.in_edges(commodities[i].edge.v)) -
-                      gp.quicksum(W[i, e[0], e[1]] for e in g.out_edges(commodities[i].edge.v)) >= gamma *
+        m.addConstrs((gp.quicksum(W[i, e[0], e[1]] for e in g.in_edges(commodities[i].t)) -
+                      gp.quicksum(W[i, e[0], e[1]] for e in g.out_edges(commodities[i].t)) >= gamma *
                       commodities[i].demand
                       for i in I), name='b')
 
@@ -62,10 +62,10 @@ def solve_p5(G: SrgGraph, beta, gamma, _lambda, p, non_terminals):
         m.addConstrs((R[i, q, e[0], e[1]] <= W[i, e[0], e[1]] for e in E for q in Q for i in I), name='g')
 
         # Constraint (j): aux variable phi
-        m.addConstrs((phi[q] >= gp.quicksum(W[i, e[0], e[1]] for i in I for e in g.in_edges(commodities[i].edge.v)) -
-                      gp.quicksum(W[i, e[0], e[1]] for i in I for e in g.out_edges(commodities[i].edge.v)) -
-                      gp.quicksum(R[i, q, e[0], e[1]] for i in I for e in g.in_edges(commodities[i].edge.v)) +
-                      gp.quicksum(R[i, q, e[0], e[1]] for i in I for e in g.out_edges(commodities[i].edge.v))
+        m.addConstrs((phi[q] >= gp.quicksum(W[i, e[0], e[1]] for i in I for e in g.in_edges(commodities[i].t)) -
+                      gp.quicksum(W[i, e[0], e[1]] for i in I for e in g.out_edges(commodities[i].t)) -
+                      gp.quicksum(R[i, q, e[0], e[1]] for i in I for e in g.in_edges(commodities[i].t)) +
+                      gp.quicksum(R[i, q, e[0], e[1]] for i in I for e in g.out_edges(commodities[i].t))
                       - alpha for q in Q), name='j')
 
         # Constraint (k): lower bound of lambda

@@ -49,9 +49,9 @@ def get_graph():
     g = nx.to_directed(g)
 
     commodities = [
-        Commodity(Edge(1, 7), 3, 6),
-        Commodity(Edge(2, 8), 3, 6),
-        Commodity(Edge(9, 11), 3, 8)
+        Commodity(StPair(1, 7), 3, 6),
+        Commodity(StPair(2, 8), 3, 6),
+        Commodity(StPair(9, 11), 3, 8)
     ]
 
     srg = [

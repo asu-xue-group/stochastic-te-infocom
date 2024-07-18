@@ -1,4 +1,5 @@
 import graphs.toy_extended as toy_ext
+import graphs.grid as grid
 from graphs.srg_graph import SrgGraph
 from lp_solvers import *
 from utilities.cycle_check import check_cycle
@@ -6,7 +7,7 @@ from utilities.print_formatting import *
 import time
 
 
-def run(G: SrgGraph, k: int, gamma: float = None, beta: float = None):
+def run(G: SrgGraph, k: int, gamma: float = None, beta: float = None, output = True):
     # logging.getLogger().setLevel(logging.INFO)
 
     # Draw the network / sanity check
@@ -29,19 +30,19 @@ def run(G: SrgGraph, k: int, gamma: float = None, beta: float = None):
     non_terminals = {}
     for i in I:
         all_nodes = set(g.nodes)
-        all_nodes.remove(commodities[i][0][0])
-        all_nodes.remove(commodities[i][0][1])
+        all_nodes.remove(commodities[i].s)
+        all_nodes.remove(commodities[i].t)
         non_terminals[i] = all_nodes
 
     # CVaR beta
     # beta @ 0.945 may be interesting
     # Using simplex, different behavior can be observed at
     # 0.94499999, 0.944999999, 0.9449999999
-    if not beta:
+    if beta is None:
         beta = 0.95
 
     # Solve for the optimal gamma
-    if not gamma:
+    if gamma is None:
         gamma = solve_p3(G)
     if gamma == -1:
         logging.critical('No flow can be established for the input.')
@@ -54,29 +55,32 @@ def run(G: SrgGraph, k: int, gamma: float = None, beta: float = None):
     W, m, paths = solve_p6(G, k, gamma, beta, p)
     teavar_end = time.perf_counter()
 
-    m.update()
-    tmp = {}
-    for k, v in W.items():
-        tmp[k] = v.x
-    print('Part 1: TeaVar w/ budget constraints (min CVaR)=======================')
-    print_flows_te(G, tmp, paths, p, beta)
+    if output:
+        m.update()
+        tmp = {}
+        for k, v in W.items():
+            tmp[k] = v.x
+        print('Part 1: TeaVar w/ budget constraints (min CVaR)=======================')
+        print_flows_te(G, tmp, paths, p, beta)
 
     # Solve TeaVaR w/ budget constraints, Max EXT
 
-    print('Part 2: Max EXT w/ budget constraints=======================')
     maxext_start = time.perf_counter()
     W, m = solve_p7(G, k, gamma, p, paths)
     maxext_end = time.perf_counter()
-    m.update()
-    tmp = {}
-    for k, v in W.items():
-        tmp[k] = v.x
-    print_flows_te(G, tmp, paths, p, beta)
 
-    print('Part 3: LP reformulation =====================')
+    if output:
+        print('Part 2: Max EXT w/ budget constraints=======================')
+        m.update()
+        tmp = {}
+        for k, v in W.items():
+            tmp[k] = v.x
+        print_flows_te(G, tmp, paths, p, beta)
+
+        print('Part 3: LP reformulation =====================')
 
     # Maximum flow
-    W_max = np.sum([gamma * c[1] for c in commodities])
+    W_max = np.sum([gamma * c.demand for c in commodities])
     logging.info(f'W_max={W_max}')
 
     # Solve for lambda_opt via bisection
@@ -145,12 +149,13 @@ def run(G: SrgGraph, k: int, gamma: float = None, beta: float = None):
                 final_R[k] = v.x
     lp_end = time.perf_counter()
 
-    cvar = cvar_2(G, tmp, beta, p, non_terminals)
+    if output:
+        cvar = cvar_2(G, tmp, beta, p, non_terminals)
 
-    print_flows(G, tmp, final_R, p)
-    print(f'Final CVaR = {cvar:.3f}')
-    print(f'alpha = {alpha.x:.3f}')
-    print('=========================')
+        print_flows(G, tmp, final_R, p)
+        print(f'Final CVaR = {cvar:.3f}')
+        print(f'alpha = {alpha.x:.3f}')
+        print('=========================')
     print(f'Timing information')
     print(f'TeaVaR: {teavar_end - teavar_start}')
     print(f'MaxFlow: {maxext_end - maxext_start}')
@@ -158,5 +163,5 @@ def run(G: SrgGraph, k: int, gamma: float = None, beta: float = None):
 
 
 if __name__ == '__main__':
-    G = toy_ext.get_graph()
-    run(G, 0, 0.95)
+    G = grid.get_graph(6, 0)
+    run(G, 0, output=False)
