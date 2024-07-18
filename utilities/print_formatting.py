@@ -1,7 +1,11 @@
+from graphs.srg_graph import SrgGraph
 from utilities.cvar_calc import *
 
 
-def print_flows(G, W_plus, R_plus, commodities, srg, p):
+def print_flows(G: SrgGraph, W, R, p):
+    srg = G.srg
+    commodities = G.commodities
+    g = G.graph
     num_srg = len(srg)
     I = range(len(commodities))
     Q = range(int(math.pow(2, num_srg)))
@@ -12,24 +16,24 @@ def print_flows(G, W_plus, R_plus, commodities, srg, p):
     # check = all([sum([W_plus[i, e[0], e[1]] for i in I]) <= G[e[0]][e[1]]['cap'] for e in E])
     # print(f'Capacity check: {check}')
     for i in I:
-        sat = (sum([W_plus[i, e[0], e[1]] for e in G.in_edges(commodities[i][0][1])])
-               - sum([W_plus[i, e[0], e[1]] for e in G.out_edges(commodities[i][0][1])]))
-        print(f'Commodity {i} satisfied: {sat} out of {commodities[i][1]}')
+        sat = (sum([W[i, e[0], e[1]] for e in g.in_edges(commodities[i].edge.v)])
+               - sum([W[i, e[0], e[1]] for e in g.out_edges(commodities[i].edge.v)]))
+        print(f'Commodity {i} satisfied: {sat} out of {commodities[i].demand}')
 
         print(f'Flow for commodity {i}: ', end='')
-        for k, v in W_plus.items():
+        for k, v in W.items():
             if k[0] == i and v > 0:
                 print(f'({k[1]}, {k[2]}), {v:.3f} | ', end='')
         print('\n')
 
-    if R_plus is not None:
+    if R is not None:
         print('\n==========================================')
         print('Recovery Flow')
         ext = 0
         for q in Q:
             indicators = np.array([int(i) for i in bin(q)[2:]])
             indicators = np.insert(indicators, 0, np.zeros(len(srg) - len(indicators)))
-            failed_srg = [srg[i][0] for i in range(len(indicators)) if indicators[i] == 1]
+            failed_srg = [srg[i].edges for i in range(len(indicators)) if indicators[i] == 1]
             print(f'{q}-th case')
             print(f'Failed SRG {failed_srg}')
             print(f'Probability: {p[q]:.4f}')
@@ -39,13 +43,13 @@ def print_flows(G, W_plus, R_plus, commodities, srg, p):
             # print(f'Capacity check: {check}')
             total = 0
             for i in I:
-                sat = (sum([R_plus.get((i, q, e[0], e[1]), 0) for e in G.in_edges(commodities[i][0][1])])
-                       - sum([R_plus.get((i, q, e[0], e[1]), 0) for e in G.out_edges(commodities[i][0][1])]))
-                print(f'Commodity {i} satisfied: {sat:.3f} out of {commodities[i][1]}')
+                sat = (sum([R.get((i, q, e[0], e[1]), 0) for e in g.in_edges(commodities[i].edge.v)])
+                       - sum([R.get((i, q, e[0], e[1]), 0) for e in g.out_edges(commodities[i].edge.v)]))
+                print(f'Commodity {i} satisfied: {sat:.3f} out of {commodities[i].demand}')
                 total = total + sat
 
                 print(f'Flow for commodity {i}: ', end='')
-                for k, v in R_plus.items():
+                for k, v in R.items():
                     if k[0] == i and k[1] == q and v > 0:
                         print(f'({k[2]}, {k[3]}), {v:.3f} | ', end='')
                 print('\n')
@@ -56,21 +60,24 @@ def print_flows(G, W_plus, R_plus, commodities, srg, p):
         print(f'Expected throughput = {ext:.3f}')
 
 
-def print_flows_te(G, W, paths, commodities, srg, p, beta):
+def print_flows_te(G: SrgGraph, W, paths, p, beta):
+    srg = G.srg
+    commodities = G.commodities
+    g = G.graph
     num_srg = len(srg)
     I = range(len(commodities))
-    l = calculate_l(G, paths)
+    l = calculate_l(g, paths)
     Q = range(int(math.pow(2, num_srg)))
-    R = range(len(paths[0]))
+    R = get_R(paths)
 
     sat = [np.sum([W[i, r] for r in range(len(paths[0]))]) for i in I]
     for i in I:
-        print(f'Commodity {i} satisfied: {sat[i]:.3f} out of {commodities[i][1]}')
+        print(f'Commodity {i} satisfied: {sat[i]:.3f} out of {commodities[i].demand}')
         for r in range(len(paths[0])):
             print(f'------ Path {paths[i][r]} has flow {W[i, r]:.3f}')
 
-    ext = np.sum([p[q] * np.sum([W[i, r] * y(paths[i][r], q, srg, l) for r in R for i in I]) for q in Q])
+    ext = np.sum([p[q] * np.sum([W[i, r] * y(tuple(paths[i][r]), q, srg, l) for r in R[i] for i in I]) for q in Q])
     print(f'Expected throughput={ext:.3f}')
-    cvar, alpha = cvar_te(commodities, paths, srg, beta, p, W, G)
+    cvar, alpha = cvar_te(G, paths, beta, p, W)
     print(f'CVaR({beta})={cvar:.3f}, alpha={alpha:.3f}')
     print()

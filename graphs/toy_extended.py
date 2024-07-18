@@ -1,5 +1,6 @@
+import networkx as nx
 from networkx import Graph
-from srg_graph import *
+from graphs.srg_graph import *
 
 
 def get_graph():
@@ -43,6 +44,9 @@ def get_graph():
     g.add_edge(8, 13, cap=2, cost=8)
     g.add_edge(8, 15, cap=2, cost=2)
     g.add_edge(14, 15, cap=2, cost=2)
+
+    # Convert to a directed representation of the graph
+    g = nx.to_directed(g)
 
     commodities = [
         Commodity(Edge(1, 7), 3, 6),

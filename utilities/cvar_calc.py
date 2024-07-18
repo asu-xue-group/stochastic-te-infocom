@@ -1,11 +1,15 @@
 import gurobipy as gp
 from gurobipy import *
 
+from graphs.srg_graph import SrgGraph
 from lp_solvers.common import *
 
 
-def cvar_2(commodities: list, srg: list, G: DiGraph, W, beta, p, non_terminals):
+def cvar_2(G: SrgGraph, W, beta, p, non_terminals):
     with gp.Env(empty=True) as env:
+        srg = G.srg
+        commodities = G.commodities
+        g = G.graph
         env.setParam('OutputFlag', 0)
         env.setParam('DualReductions', 0)
         env.start()
@@ -16,7 +20,7 @@ def cvar_2(commodities: list, srg: list, G: DiGraph, W, beta, p, non_terminals):
         # Actual data is stored in their respective variables
         I = range(len(commodities))
         Q = range(int(math.pow(2, num_srg)))
-        E = G.edges()
+        E = g.edges()
 
         phi = m.addVars(Q, name='phi')
         alpha = m.addVar(name='alpha')
@@ -24,8 +28,8 @@ def cvar_2(commodities: list, srg: list, G: DiGraph, W, beta, p, non_terminals):
         R = m.addVars(I, Q, E, name='R')
 
         # Constraint (e): flow conservation for recovery flows
-        m.addConstrs((gp.quicksum(R[i, q, e[0], e[1]] for e in G.in_edges(v)) -
-                      gp.quicksum(R[i, q, e[0], e[1]] for e in G.out_edges(v)) == 0
+        m.addConstrs((gp.quicksum(R[i, q, e[0], e[1]] for e in g.in_edges(v)) -
+                      gp.quicksum(R[i, q, e[0], e[1]] for e in g.out_edges(v)) == 0
                       for i in I for v in non_terminals[i] for q in Q), name='e')
 
         # Constraint (f): zero flow for broken links
@@ -35,10 +39,10 @@ def cvar_2(commodities: list, srg: list, G: DiGraph, W, beta, p, non_terminals):
         m.addConstrs((R[i, q, e[0], e[1]] <= W[i, e[0], e[1]] for e in E for q in Q for i in I), name='g')
 
         # Constraint (3.12) / (j)
-        m.addConstrs((phi[q] >= gp.quicksum(W[i, e[0], e[1]] for i in I for e in G.in_edges(commodities[i][0][1])) -
-                      gp.quicksum(W[i, e[0], e[1]] for i in I for e in G.out_edges(commodities[i][0][1])) -
-                      gp.quicksum(R[i, q, e[0], e[1]] for i in I for e in G.in_edges(commodities[i][0][1])) +
-                      gp.quicksum(R[i, q, e[0], e[1]] for i in I for e in G.out_edges(commodities[i][0][1]))
+        m.addConstrs((phi[q] >= gp.quicksum(W[i, e[0], e[1]] for i in I for e in g.in_edges(commodities[i].edge.v)) -
+                      gp.quicksum(W[i, e[0], e[1]] for i in I for e in g.out_edges(commodities[i].edge.v)) -
+                      gp.quicksum(R[i, q, e[0], e[1]] for i in I for e in g.in_edges(commodities[i].edge.v)) +
+                      gp.quicksum(R[i, q, e[0], e[1]] for i in I for e in g.out_edges(commodities[i].edge.v))
                       - alpha for q in Q), name='j')
 
         # Constraint (3.13) / (k)
@@ -50,8 +54,11 @@ def cvar_2(commodities: list, srg: list, G: DiGraph, W, beta, p, non_terminals):
         return m.ObjVal
 
 
-def cvar_3(commodities: list, srg: list, G: DiGraph, W, R, beta, p):
+def cvar_3(G: SrgGraph, W, R, beta, p):
     with gp.Env(empty=True) as env:
+        srg = G.srg
+        commodities = G.commodities
+        g = G.graph
         env.setParam('OutputFlag', 0)
         env.start()
         m = gp.Model(env=env)
@@ -67,10 +74,10 @@ def cvar_3(commodities: list, srg: list, G: DiGraph, W, R, beta, p):
         _lambda = m.addVar(name='lambda')
 
         # Constraint (3.8) / (j)
-        m.addConstrs((phi[q] >= gp.quicksum(W[i, e[0], e[1]] for i in I for e in G.in_edges(commodities[i][0][1])) -
-                      gp.quicksum(W[i, e[0], e[1]] for i in I for e in G.out_edges(commodities[i][0][1])) -
-                      gp.quicksum(R[i, q, e[0], e[1]] for i in I for e in G.in_edges(commodities[i][0][1])) +
-                      gp.quicksum(R[i, q, e[0], e[1]] for i in I for e in G.out_edges(commodities[i][0][1]))
+        m.addConstrs((phi[q] >= gp.quicksum(W[i, e[0], e[1]] for i in I for e in g.in_edges(commodities[i].edge.v)) -
+                      gp.quicksum(W[i, e[0], e[1]] for i in I for e in g.out_edges(commodities[i].edge.v)) -
+                      gp.quicksum(R[i, q, e[0], e[1]] for i in I for e in g.in_edges(commodities[i].edge.v)) +
+                      gp.quicksum(R[i, q, e[0], e[1]] for i in I for e in g.out_edges(commodities[i].edge.v))
                       - alpha for q in Q), name='j')
 
         # Constraint (3.9) / (k)
@@ -82,8 +89,12 @@ def cvar_3(commodities: list, srg: list, G: DiGraph, W, R, beta, p):
         return m.ObjVal
 
 
-def cvar_te(commodities: list, paths: list, srg: list, beta, p: list, W, G: DiGraph):
+def cvar_te(G: SrgGraph, paths: list, beta, p: list, W):
     with gp.Env(empty=True) as env:
+        srg = G.srg
+        commodities = G.commodities
+        g = G.graph
+
         env.setParam('OutputFlag', 0)
         env.setParam('Method', 0)
         env.start()
@@ -94,8 +105,8 @@ def cvar_te(commodities: list, paths: list, srg: list, beta, p: list, W, G: DiGr
         # Actual data is stored in their respective variables
         I = range(len(commodities))
         Q = range(int(math.pow(2, num_srg)))
-        R = range(len(paths[0]))
-        l = calculate_l(G, paths)
+        R = get_R(paths)
+        l = calculate_l(g, paths)
 
         # VARIABLES
         # alpha_i
@@ -106,7 +117,7 @@ def cvar_te(commodities: list, paths: list, srg: list, beta, p: list, W, G: DiGr
         # CONSTRAINTS
         # Constraint A4: phi auxiliary variable for CVaR
         m.addConstrs(
-            (phi[q] >= gp.quicksum(W[i, r] * (1 - y(paths[i][r], q, srg, l)) for r in R for i in I) - alpha for q in Q),
+            (phi[q] >= gp.quicksum(W[i, r] * (1 - y(tuple(paths[i][r]), q, srg, l)) for i in I for r in R[i]) - alpha for q in Q),
             name='A4')
 
         m.setObjective(alpha + 1 / (1 - beta) * gp.quicksum(p[q] * phi[q] for q in Q), GRB.MINIMIZE)

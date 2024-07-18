@@ -18,7 +18,7 @@ def E_f(q: int, srg: list[Srg]):
 
 
 # Calculate the probability of failure event configuration z
-def calc_pq(z: int, srg: list[Srg]):
+def calc_pq(z: list, srg: list[Srg]):
     product = 1
     for i in range(len(z)):
         product *= z[i] * srg[i].prob + (1 - z[i]) * (1 - srg[i].prob)
@@ -60,3 +60,8 @@ def L(l: dict, r: tuple, e: tuple):
         return 1
     else:
         return 0
+
+
+# Return R, a generator of int from p where R[i] = range(len(p[i]))
+def get_R(paths: list):
+    return [range(len(p)) for p in paths]

@@ -1,21 +1,25 @@
+import logging
+
 import networkx as nx
 
-import graphs.toy_extended
+import graphs.toy_extended as toy_ext
 from lp_solvers import *
 from utilities.cycle_check import check_cycle
 from utilities.print_formatting import *
 from graphs.srg_graph import SrgGraph
 
 
-def run(g: SrgGraph, beta: float = None):
-    G = nx.to_directed(g)
-    # logging.getLogger().setLevel(logging.DEBUG)
+def run(G: SrgGraph, k: int, beta: float = None):
+    # logging.getLogger().setLevel(logging.INFO)
 
     # Draw the network / sanity check
     # nx.draw(G, with_labels=True, font_weight='bold')
     # plt.show()
 
+    srg = G.srg
     num_srg = len(srg)
+    g = G.graph
+    commodities = G.commodities
     Q = range(int(math.pow(2, num_srg)))
     I = range(len(commodities))
 
@@ -27,7 +31,7 @@ def run(g: SrgGraph, beta: float = None):
     # Cache the nodes after removing the source and the destination of a commodity
     non_terminals = {}
     for i in I:
-        all_nodes = set(G.nodes)
+        all_nodes = set(g.nodes)
         all_nodes.remove(commodities[i][0][0])
         all_nodes.remove(commodities[i][0][1])
         non_terminals[i] = all_nodes
@@ -39,31 +43,31 @@ def run(g: SrgGraph, beta: float = None):
     beta = 0
 
     # Solve for the optimal gamma
-    gamma = solve_p3(commodities, budget, G)
+    gamma = solve_p3(G)
     if gamma == -1:
         logging.critical('No flow can be established for the input.')
         exit(-1)
     else:
-        logging.info(f'gamma={gamma}')
+        print(f'gamma={gamma}')
 
     # Solve TeaVaR w/ budget constraints, min CVaR
-    W, m = solve_p6(commodities, paths, srg, gamma, beta, p, budget, G)
+    W, m, paths = solve_p6(G, k, gamma, beta, p)
     m.update()
     tmp = {}
     for k, v in W.items():
         tmp[k] = v.x
     print('Part 1: TeaVar w/ budget constraints (min CVaR)=======================')
-    print_flows_te(G, tmp, paths, commodities, srg, p, beta)
+    print_flows_te(G, tmp, paths, p, beta)
 
     # Solve TeaVaR w/ budget constraints, Max EXT
 
     print('Part 2: Max EXT w/ budget constraints=======================')
-    W, m = solve_p7(commodities, paths, srg, gamma, p, budget, G)
+    W, m = solve_p7(G, k, gamma, p, paths)
     m.update()
     tmp = {}
     for k, v in W.items():
         tmp[k] = v.x
-    print_flows_te(G, tmp, paths, commodities, srg, p, beta)
+    print_flows_te(G, tmp, paths, p, beta)
 
     print('Part 3: LP reformulation =====================')
 
@@ -88,7 +92,7 @@ def run(g: SrgGraph, beta: float = None):
         curr_lambda = (lambda_ub + lambda_lb) / 2.0
         logging.info(f'Iteration {itr}, current lambda={curr_lambda} [{lambda_lb}-{lambda_ub}]')
 
-        W_curr, flows, phi, m = solve_p5(commodities, srg, G, beta, gamma, curr_lambda, budget, p, non_terminals)
+        W_curr, flows, phi, m = solve_p5(G, beta, gamma, curr_lambda, p, non_terminals)
         # the current model is infeasible, we need to increase the lambda to relax the constraints
         if not W_curr:
             lambda_lb = curr_lambda
@@ -97,7 +101,7 @@ def run(g: SrgGraph, beta: float = None):
         else:
             m.update()
             # If it contains a cycle, then we need to increase the lambda
-            if check_cycle(G, flows):
+            if check_cycle(g, flows):
                 lambda_lb = curr_lambda
                 logging.debug('Cycle detected, increasing lambda')
             # Otherwise, we can try a more aggressive solution to get a better result
@@ -136,12 +140,13 @@ def run(g: SrgGraph, beta: float = None):
             if v.x > 0:
                 final_R[k] = v.x
 
-    cvar = cvar_2(commodities, srg, G, tmp, beta, p, non_terminals)
+    cvar = cvar_2(G, tmp, beta, p, non_terminals)
 
-    print_flows(G, tmp, final_R, commodities, srg, p)
+    print_flows(G, tmp, final_R, p)
     print(f'Final CVaR = {cvar:.3f}')
     print(f'alpha = {alpha.x:.3f}')
 
 
 if __name__ == '__main__':
-    main()
+    G = toy_ext.get_graph()
+    run(G, 3, 0.95)
