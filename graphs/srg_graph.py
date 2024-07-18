@@ -1,7 +1,8 @@
-from networkx import Graph, DiGraph
-from itertools import islice
 from collections import namedtuple
+from itertools import islice
+
 import networkx as nx
+from networkx import DiGraph
 
 Edge = namedtuple('Edge', ['u', 'v'])
 Commodity = namedtuple('Commodity', ['edge', 'demand', 'budget'])

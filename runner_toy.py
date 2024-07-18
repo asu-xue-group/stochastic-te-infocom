@@ -1,12 +1,8 @@
-import logging
-
-import networkx as nx
-
 import graphs.toy_extended as toy_ext
+from graphs.srg_graph import SrgGraph
 from lp_solvers import *
 from utilities.cycle_check import check_cycle
 from utilities.print_formatting import *
-from graphs.srg_graph import SrgGraph
 
 
 def run(G: SrgGraph, k: int, beta: float = None):
@@ -70,7 +66,6 @@ def run(G: SrgGraph, k: int, beta: float = None):
     print_flows_te(G, tmp, paths, p, beta)
 
     print('Part 3: LP reformulation =====================')
-
 
     # Maximum flow
     W_max = np.sum([gamma * c[1] for c in commodities])

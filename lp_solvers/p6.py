@@ -38,8 +38,9 @@ def solve_p6(G: SrgGraph, k, gamma, beta, p: list):
         m.addConstrs((gp.quicksum(W[i, r] for r in R[i]) >= gamma * commodities[i].demand for i in I), name='A1')
 
         # Constraint A2: capacity constraints
-        m.addConstrs((gp.quicksum(W[i, r] * L(l, tuple(paths[i][r]), e) for i in I for r in R[i]) <= g[e[0]][e[1]]['cap']
-                      for e in E), name='A2')
+        m.addConstrs(
+            (gp.quicksum(W[i, r] * L(l, tuple(paths[i][r]), e) for i in I for r in R[i]) <= g[e[0]][e[1]]['cap']
+             for e in E), name='A2')
 
         # Constraint A3: cost constraints
         m.addConstrs((gp.quicksum(W[i, r] * L(l, tuple(paths[i][r]), e) * g[e[0]][e[1]]['cost']
@@ -47,7 +48,8 @@ def solve_p6(G: SrgGraph, k, gamma, beta, p: list):
 
         # Constraint A4: phi auxiliary variable for CVaR
         m.addConstrs(
-            (phi[q] >= gp.quicksum(W[i, r] * (1 - y(tuple(paths[i][r]), q, srg, l)) for i in I for r in R[i]) - alpha for q in Q),
+            (phi[q] >= gp.quicksum(W[i, r] * (1 - y(tuple(paths[i][r]), q, srg, l)) for i in I for r in R[i]) - alpha
+             for q in Q),
             name='A4')
 
         m.setObjective(alpha + 1 / (1 - beta) * gp.quicksum(p[q] * phi[q] for q in Q), GRB.MINIMIZE)

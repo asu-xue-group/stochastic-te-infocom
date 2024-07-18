@@ -117,7 +117,8 @@ def cvar_te(G: SrgGraph, paths: list, beta, p: list, W):
         # CONSTRAINTS
         # Constraint A4: phi auxiliary variable for CVaR
         m.addConstrs(
-            (phi[q] >= gp.quicksum(W[i, r] * (1 - y(tuple(paths[i][r]), q, srg, l)) for i in I for r in R[i]) - alpha for q in Q),
+            (phi[q] >= gp.quicksum(W[i, r] * (1 - y(tuple(paths[i][r]), q, srg, l)) for i in I for r in R[i]) - alpha
+             for q in Q),
             name='A4')
 
         m.setObjective(alpha + 1 / (1 - beta) * gp.quicksum(p[q] * phi[q] for q in Q), GRB.MINIMIZE)

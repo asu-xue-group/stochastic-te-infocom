@@ -1,5 +1,5 @@
-import networkx as nx
 from networkx import Graph
+
 from graphs.srg_graph import *
 
 

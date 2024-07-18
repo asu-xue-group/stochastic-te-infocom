@@ -39,15 +39,17 @@ def solve_p7(G: SrgGraph, k, gamma, p: list, paths=None):
         m.addConstrs((gp.quicksum(W[i, r] for r in R[i]) >= gamma * commodities[i].demand for i in I), name='B1')
 
         # Constraint B2: capacity constraints
-        m.addConstrs((gp.quicksum(W[i, r] * L(l, tuple(paths[i][r]), e) for i in I for r in R[i]) <= g[e[0]][e[1]]['cap']
-                      for e in E), name='B2')
+        m.addConstrs(
+            (gp.quicksum(W[i, r] * L(l, tuple(paths[i][r]), e) for i in I for r in R[i]) <= g[e[0]][e[1]]['cap']
+             for e in E), name='B2')
 
         # Constraint B3: cost constraints
         m.addConstrs((gp.quicksum(W[i, r] * L(l, tuple(paths[i][r]), e) * g[e[0]][e[1]]['cost']
                                   for e in E for r in R[i]) <= commodities[i].budget for i in I), name='B3')
 
         m.setObjective(
-            gp.quicksum(p[q] * gp.quicksum(W[i, r] * y(tuple(paths[i][r]), q, srg, l) for i in I for r in R[i]) for q in Q),
+            gp.quicksum(
+                p[q] * gp.quicksum(W[i, r] * y(tuple(paths[i][r]), q, srg, l) for i in I for r in R[i]) for q in Q),
             GRB.MAXIMIZE)
 
         # Optimize model

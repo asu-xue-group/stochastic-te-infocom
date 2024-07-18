@@ -1,6 +1,6 @@
 import gurobipy as gp
 from gurobipy import *
-from networkx import DiGraph
+
 from graphs.srg_graph import SrgGraph
 
 
@@ -14,7 +14,7 @@ def solve_p3(G: SrgGraph):
 
         commodities = G.commodities
         g = G.graph
-        
+
         I = range(len(commodities))
         E = g.edges
         non_terminals = {}

@@ -2,6 +2,7 @@ import itertools
 
 import numpy as np
 from networkx import DiGraph
+
 from graphs.srg_graph import Srg
 
 
