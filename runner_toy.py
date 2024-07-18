@@ -3,9 +3,10 @@ from graphs.srg_graph import SrgGraph
 from lp_solvers import *
 from utilities.cycle_check import check_cycle
 from utilities.print_formatting import *
+import time
 
 
-def run(G: SrgGraph, k: int, beta: float = None):
+def run(G: SrgGraph, k: int, gamma: float = None, beta: float = None):
     # logging.getLogger().setLevel(logging.INFO)
 
     # Draw the network / sanity check
@@ -36,18 +37,23 @@ def run(G: SrgGraph, k: int, beta: float = None):
     # beta @ 0.945 may be interesting
     # Using simplex, different behavior can be observed at
     # 0.94499999, 0.944999999, 0.9449999999
-    beta = 0
+    if not beta:
+        beta = 0.95
 
     # Solve for the optimal gamma
-    gamma = solve_p3(G)
+    if not gamma:
+        gamma = solve_p3(G)
     if gamma == -1:
         logging.critical('No flow can be established for the input.')
         exit(-1)
     else:
         print(f'gamma={gamma}')
 
+    teavar_start = time.perf_counter()
     # Solve TeaVaR w/ budget constraints, min CVaR
     W, m, paths = solve_p6(G, k, gamma, beta, p)
+    teavar_end = time.perf_counter()
+
     m.update()
     tmp = {}
     for k, v in W.items():
@@ -58,7 +64,9 @@ def run(G: SrgGraph, k: int, beta: float = None):
     # Solve TeaVaR w/ budget constraints, Max EXT
 
     print('Part 2: Max EXT w/ budget constraints=======================')
+    maxext_start = time.perf_counter()
     W, m = solve_p7(G, k, gamma, p, paths)
+    maxext_end = time.perf_counter()
     m.update()
     tmp = {}
     for k, v in W.items():
@@ -83,6 +91,7 @@ def run(G: SrgGraph, k: int, beta: float = None):
     best_flows = None
     best_phi = None
 
+    lp_start = time.perf_counter()
     while lambda_ub - lambda_lb > epsilon:
         curr_lambda = (lambda_ub + lambda_lb) / 2.0
         logging.info(f'Iteration {itr}, current lambda={curr_lambda} [{lambda_lb}-{lambda_ub}]')
@@ -134,14 +143,20 @@ def run(G: SrgGraph, k: int, beta: float = None):
         for k, v in R.items():
             if v.x > 0:
                 final_R[k] = v.x
+    lp_end = time.perf_counter()
 
     cvar = cvar_2(G, tmp, beta, p, non_terminals)
 
     print_flows(G, tmp, final_R, p)
     print(f'Final CVaR = {cvar:.3f}')
     print(f'alpha = {alpha.x:.3f}')
+    print('=========================')
+    print(f'Timing information')
+    print(f'TeaVaR: {teavar_end - teavar_start}')
+    print(f'MaxFlow: {maxext_end - maxext_start}')
+    print(f'Our LP: {lp_end - lp_start}')
 
 
 if __name__ == '__main__':
     G = toy_ext.get_graph()
-    run(G, 3, 0.95)
+    run(G, 0, 0.95)

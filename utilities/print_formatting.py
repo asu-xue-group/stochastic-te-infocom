@@ -72,10 +72,10 @@ def print_flows_te(G: SrgGraph, W, paths, p, beta):
     sat = [np.sum([W[i, r] for r in range(len(paths[0]))]) for i in I]
     for i in I:
         print(f'Commodity {i} satisfied: {sat[i]:.3f} out of {commodities[i].demand}')
-        for r in range(len(paths[0])):
+        for r in R[i]:
             print(f'------ Path {paths[i][r]} has flow {W[i, r]:.3f}')
 
-    ext = np.sum([p[q] * np.sum([W[i, r] * y(tuple(paths[i][r]), q, srg, l) for r in R[i] for i in I]) for q in Q])
+    ext = np.sum([p[q] * np.sum([W[i, r] * y(tuple(paths[i][r]), q, srg, l) for i in I for r in R[i]]) for q in Q])
     print(f'Expected throughput={ext:.3f}')
     cvar, alpha = cvar_te(G, paths, beta, p, W)
     print(f'CVaR({beta})={cvar:.3f}, alpha={alpha:.3f}')
