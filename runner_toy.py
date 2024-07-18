@@ -7,7 +7,7 @@ from utilities.print_formatting import *
 import time
 
 
-def run(G: SrgGraph, k: int, gamma: float = None, beta: float = None, output = True):
+def run(G: SrgGraph, k: int, gamma: float = None, beta: float = None, output=True):
     # logging.getLogger().setLevel(logging.INFO)
 
     # Draw the network / sanity check
@@ -50,6 +50,7 @@ def run(G: SrgGraph, k: int, gamma: float = None, beta: float = None, output = T
     else:
         print(f'gamma={gamma}')
 
+    print('Part 1: TeaVar w/ budget constraints (min CVaR)=======================')
     teavar_start = time.perf_counter()
     # Solve TeaVaR w/ budget constraints, min CVaR
     W, m, paths = solve_p6(G, k, gamma, beta, p)
@@ -60,25 +61,22 @@ def run(G: SrgGraph, k: int, gamma: float = None, beta: float = None, output = T
         tmp = {}
         for k, v in W.items():
             tmp[k] = v.x
-        print('Part 1: TeaVar w/ budget constraints (min CVaR)=======================')
         print_flows_te(G, tmp, paths, p, beta)
 
     # Solve TeaVaR w/ budget constraints, Max EXT
-
+    print('Part 2: Max EXT w/ budget constraints=======================')
     maxext_start = time.perf_counter()
     W, m = solve_p7(G, k, gamma, p, paths)
     maxext_end = time.perf_counter()
 
     if output:
-        print('Part 2: Max EXT w/ budget constraints=======================')
         m.update()
         tmp = {}
         for k, v in W.items():
             tmp[k] = v.x
         print_flows_te(G, tmp, paths, p, beta)
 
-        print('Part 3: LP reformulation =====================')
-
+    print('Part 3: LP reformulation =====================')
     # Maximum flow
     W_max = np.sum([gamma * c.demand for c in commodities])
     logging.info(f'W_max={W_max}')
@@ -126,6 +124,7 @@ def run(G: SrgGraph, k: int, gamma: float = None, beta: float = None, output = T
                     logging.info('Current flow value is already equal to opt, no need for further optimization')
                     break
         itr += 1
+    print(f'Bisection took {itr} iterations')
     if best_lambda == -1:
         logging.error('\nFailed to find an acyclic solution from the input')
     else:

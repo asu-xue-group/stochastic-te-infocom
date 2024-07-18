@@ -14,13 +14,13 @@ def get_graph(size, seed):
 
     rand = Generator(PCG64(seed))
     for e in g.edges:
-        g[e[0]][e[1]]['cap'] = max([0, rand.normal(3, 0.5)])
+        g[e[0]][e[1]]['cap'] = max([0, rand.normal(1, 0.5)])
         g[e[0]][e[1]]['cost'] = max([0, rand.normal(1, 0.1)])
 
     commodities = [
-        Commodity((0, 0), (size - 1, size - 1), 3, size * 30),
-        Commodity((size - 1, 0), (0, size - 1), 3, size * 30),
-        Commodity(((size - 1) // 2, 0), ((size - 1) // 2, size - 1), 3, size * 30)
+        Commodity((0, 0), (size - 1, size - 1), 1, size * 10),
+        Commodity((size - 1, 0), (0, size - 1), 1, size * 10),
+        Commodity(((size - 1) // 2, 0), ((size - 1) // 2, size - 1), 1, size * 10)
     ]
 
     # Randomly pick SRGs
