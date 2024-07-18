@@ -1,24 +1,19 @@
 import networkx as nx
 
-import graphs.toy_alt as toy
+import graphs.toy_extended
 from lp_solvers import *
 from utilities.cycle_check import check_cycle
 from utilities.print_formatting import *
+from graphs.srg_graph import SrgGraph
 
 
-def main(beta=None):
-    G = toy.graph()
-    G = nx.to_directed(G)
+def run(g: SrgGraph, beta: float = None):
+    G = nx.to_directed(g)
     # logging.getLogger().setLevel(logging.DEBUG)
 
     # Draw the network / sanity check
     # nx.draw(G, with_labels=True, font_weight='bold')
     # plt.show()
-
-    commodities = toy.commodities()
-    srg = toy.srg()
-    paths = toy.paths()
-    budget = toy.budget()
 
     num_srg = len(srg)
     Q = range(int(math.pow(2, num_srg)))
@@ -135,7 +130,7 @@ def main(beta=None):
     # Recover the flow with max throughput
     final_R = {}
     for q in Q:
-        _, R, m = solve_p4(commodities, srg, G, tmp, q, p, non_terminals)
+        _, R, m = solve_p4(G, tmp, q, p, non_terminals)
         m.update()
         for k, v in R.items():
             if v.x > 0:

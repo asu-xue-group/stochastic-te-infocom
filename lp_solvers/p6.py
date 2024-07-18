@@ -1,24 +1,29 @@
 import gurobipy as gp
 from gurobipy import *
 
+from graphs.srg_graph import SrgGraph
 from lp_solvers.common import *
 
 
-def solve_p6(commodities: list, paths: list, srg: list, gamma, beta, p: list, budget: list, G: DiGraph):
+def solve_p6(G: SrgGraph, k, gamma, beta, p: list):
     with gp.Env(empty=True) as env:
         env.setParam('OutputFlag', 0)
         env.setParam('Method', 0)
         env.start()
         m = gp.Model(env=env)
 
+        srg = G.srg
+        g = G.graph
+        commodities = G.commodities
+        paths = G.all_paths(k)
         num_srg = len(srg)
         # These variables are used to index the commodities, paths, and SRGs (for Gurobi variables).
         # Actual data is stored in their respective variables
         I = range(len(commodities))
         Q = range(int(math.pow(2, num_srg)))
         R = range(len(paths[0]))
-        l = calculate_l(G, paths)
-        E = G.edges()
+        l = calculate_l(g, paths)
+        E = g.edges()
 
         # VARIABLES
         # W^+_i(r)
@@ -33,15 +38,15 @@ def solve_p6(commodities: list, paths: list, srg: list, gamma, beta, p: list, bu
         # paths = i -> [path1, path2, ...]
         # srg = [((u, v), fail prob), ...]
         # Constraint A1: throughput requirements
-        m.addConstrs((gp.quicksum(W[i, r] for r in R) >= gamma * commodities[i][1] for i in I), name='A1')
+        m.addConstrs((gp.quicksum(W[i, r] for r in R) >= gamma * commodities[i].demand for i in I), name='A1')
 
         # Constraint A2: capacity constraints
-        m.addConstrs((gp.quicksum(W[i, r] * L(l, paths[i][r], e) for r in R for i in I) <= G[e[0]][e[1]]['cap']
+        m.addConstrs((gp.quicksum(W[i, r] * L(l, paths[i][r], e) for r in R for i in I) <= g[e[0]][e[1]]['cap']
                       for e in E), name='A2')
 
         # Constraint A3: cost constraints
-        m.addConstrs((gp.quicksum(W[i, r] * L(l, paths[i][r], e) * G[e[0]][e[1]]['cost']
-                                  for e in E for r in R) <= budget[i] for i in I), name='A3')
+        m.addConstrs((gp.quicksum(W[i, r] * L(l, paths[i][r], e) * g[e[0]][e[1]]['cost']
+                                  for e in E for r in R) <= commodities[i].budget for i in I), name='A3')
 
         # Constraint A4: phi auxiliary variable for CVaR
         m.addConstrs(

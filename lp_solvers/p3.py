@@ -1,23 +1,27 @@
 import gurobipy as gp
 from gurobipy import *
 from networkx import DiGraph
+from graphs.srg_graph import SrgGraph
 
 
 # Solve the multi-commodities max-flow for the
-def solve_p3(commodities: list, budget, G: DiGraph):
+def solve_p3(G: SrgGraph):
     with gp.Env(empty=True) as env:
         env.setParam('OutputFlag', 0)
         env.setParam('Method', 0)
         env.start()
         m = gp.Model(env=env)
 
+        commodities = G.commodities
+        g = G.graph
+        
         I = range(len(commodities))
-        E = G.edges
+        E = g.edges
         non_terminals = {}
         for i in I:
-            all_nodes = set(G.nodes)
-            all_nodes.remove(commodities[i][0][0])
-            all_nodes.remove(commodities[i][0][1])
+            all_nodes = set(g.nodes)
+            all_nodes.remove(commodities[i].edge.u)
+            all_nodes.remove(commodities[i].edge.v)
             non_terminals[i] = all_nodes
 
         # VARIABLES
@@ -27,23 +31,24 @@ def solve_p3(commodities: list, budget, G: DiGraph):
 
         # CONSTRAINTS
         # Constraint (a): flow conservation
-        m.addConstrs((gp.quicksum(W[i, e[0], e[1]] for e in G.in_edges(v)) -
-                      gp.quicksum(W[i, e[0], e[1]] for e in G.out_edges(v)) == 0
+        m.addConstrs((gp.quicksum(W[i, e[0], e[1]] for e in g.in_edges(v)) -
+                      gp.quicksum(W[i, e[0], e[1]] for e in g.out_edges(v)) == 0
                       for i in I for v in non_terminals[i]), name='a')
 
         # Constraint (b): bandwidth requirements
-        m.addConstrs((gp.quicksum(W[i, e[0], e[1]] for e in G.in_edges(commodities[i][0][1])) -
-                      gp.quicksum(W[i, e[0], e[1]] for e in G.out_edges(commodities[i][0][1])) >= gamma *
-                      commodities[i][1]
+        m.addConstrs((gp.quicksum(W[i, e[0], e[1]] for e in g.in_edges(commodities[i].edge.v)) -
+                      gp.quicksum(W[i, e[0], e[1]] for e in g.out_edges(commodities[i].edge.v)) >= gamma *
+                      commodities[i].demand
                       for i in I), name='b')
 
         # Constraint (c): capacity constraint
         # the "if" clause is added to prevent dupes
-        m.addConstrs((gp.quicksum(W[i, e[0], e[1]] + W[i, e[1], e[0]] for i in I) <= G[e[0]][e[1]]['cap']
+        m.addConstrs((gp.quicksum(W[i, e[0], e[1]] + W[i, e[1], e[0]] for i in I) <= g[e[0]][e[1]]['cap']
                       for e in E if e[0] < e[1]), name='c')
 
         # Constraint (extra): budget constraint
-        m.addConstrs((gp.quicksum(G[e[0]][e[1]]['cost'] * W[i, e[0], e[1]] for e in E) <= budget[i] for i in I),
+        m.addConstrs((gp.quicksum(g[e[0]][e[1]]['cost'] * W[i, e[0], e[1]] for e in E) <=
+                      commodities[i].budget for i in I),
                      name='extra')
 
         m.setObjective(gamma, GRB.MAXIMIZE)

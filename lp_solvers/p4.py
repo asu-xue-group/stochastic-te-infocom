@@ -1,24 +1,29 @@
 import gurobipy as gp
 from gurobipy import *
 
+from graphs.srg_graph import SrgGraph
 from lp_solvers.common import *
 from utilities.print_formatting import print_flows
 
 
-def solve_p4(commodities: list, srg: list, G: DiGraph, W_opt, q, p, non_terminals, print_flow=False):
+def solve_p4(G: SrgGraph, W_opt, q, p, non_terminals, print_flow=False):
     # META VARIABLES
     with gp.Env(empty=True) as env:
         env.setParam('OutputFlag', 0)
         env.setParam('Method', 0)
         env.start()
         m = gp.Model(env=env)
+
+        srg = G.srg
+        commodities = G.commodities
+        g = G.graph
         num_srg = len(srg)
 
         # These variables are used to index the commodities and SRGs (for Gurobi variables).
         # Actual data is stored in their respective variables
         I = range(len(commodities))
         Q = range(int(math.pow(2, num_srg)))
-        E = G.edges()
+        E = g.edges()
 
         # VARIABLES
         # R^{+,q}_i(r)
@@ -26,8 +31,8 @@ def solve_p4(commodities: list, srg: list, G: DiGraph, W_opt, q, p, non_terminal
 
         # CONSTRAINTS
         # Constraint (e): flow conservation for recovery flows
-        m.addConstrs((gp.quicksum(R[i, q, e[0], e[1]] for e in G.in_edges(v)) -
-                      gp.quicksum(R[i, q, e[0], e[1]] for e in G.out_edges(v)) == 0
+        m.addConstrs((gp.quicksum(R[i, q, e[0], e[1]] for e in g.in_edges(v)) -
+                      gp.quicksum(R[i, q, e[0], e[1]] for e in g.out_edges(v)) == 0
                       for i in I for v in non_terminals[i] for q in Q), name='e')
 
         # Constraint (f): zero flow for broken links
@@ -42,7 +47,7 @@ def solve_p4(commodities: list, srg: list, G: DiGraph, W_opt, q, p, non_terminal
         m.optimize()
 
         if print_flow:
-            print_flows(G, W_opt, R, commodities, srg, p)
+            print_flows(g, W_opt, R, commodities, srg, p)
 
         if m.Status == GRB.OPTIMAL:
             return m.ObjVal, R, m
