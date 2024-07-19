@@ -5,7 +5,7 @@ from graphs.srg_graph import SrgGraph
 from lp_solvers.common import *
 
 
-def solve_p6(G: SrgGraph, k, gamma, beta, p: list):
+def solve_p6(G: SrgGraph, k, gamma, beta, p: list, paths=None):
     with gp.Env(empty=True) as env:
         env.setParam('OutputFlag', 0)
         env.setParam('Method', 0)
@@ -15,7 +15,8 @@ def solve_p6(G: SrgGraph, k, gamma, beta, p: list):
         srg = G.srg
         g = G.graph
         commodities = G.commodities
-        paths = G.all_paths(k)
+        if paths is None:
+            paths = G.all_paths(k)
         num_srg = len(srg)
         # These variables are used to index the commodities, paths, and SRGs (for Gurobi variables).
         # Actual data is stored in their respective variables
@@ -57,4 +58,4 @@ def solve_p6(G: SrgGraph, k, gamma, beta, p: list):
         # Optimize model
         m.optimize()
 
-        return W, m, paths
+        return W, m

@@ -50,11 +50,14 @@ def run(G: SrgGraph, k: int, gamma: float = None, beta: float = None, output=Tru
     else:
         print(f'gamma={gamma}')
 
+    paths = G.all_paths(k)
+
     print('Part 1: TeaVar w/ budget constraints (min CVaR)=======================')
     teavar_start = time.perf_counter()
     # Solve TeaVaR w/ budget constraints, min CVaR
-    W, m, paths = solve_p6(G, k, gamma, beta, p)
+    W, m = solve_p6(G, k, gamma, beta, p, paths)
     teavar_end = time.perf_counter()
+    print(f'TeaVaR time: {teavar_end - teavar_start}')
 
     if output:
         m.update()
@@ -68,6 +71,7 @@ def run(G: SrgGraph, k: int, gamma: float = None, beta: float = None, output=Tru
     maxext_start = time.perf_counter()
     W, m = solve_p7(G, k, gamma, p, paths)
     maxext_end = time.perf_counter()
+    print(f'MaxFlow time: {maxext_end - maxext_start}')
 
     if output:
         m.update()
@@ -147,6 +151,7 @@ def run(G: SrgGraph, k: int, gamma: float = None, beta: float = None, output=Tru
             if v.x > 0:
                 final_R[k] = v.x
     lp_end = time.perf_counter()
+    print(f'LP time: {lp_end - lp_start}')
 
     if output:
         cvar = cvar_2(G, tmp, beta, p, non_terminals)
@@ -154,11 +159,6 @@ def run(G: SrgGraph, k: int, gamma: float = None, beta: float = None, output=Tru
         print_flows(G, tmp, final_R, p)
         print(f'Final CVaR = {cvar:.3f}')
         print(f'alpha = {alpha.x:.3f}')
-        print('=========================')
-    print(f'Timing information')
-    print(f'TeaVaR: {teavar_end - teavar_start}')
-    print(f'MaxFlow: {maxext_end - maxext_start}')
-    print(f'Our LP: {lp_end - lp_start}')
 
 
 if __name__ == '__main__':

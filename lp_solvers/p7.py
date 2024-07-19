@@ -5,7 +5,7 @@ from graphs.srg_graph import SrgGraph
 from lp_solvers.common import *
 
 
-def solve_p7(G: SrgGraph, k, gamma, p: list, paths=None):
+def solve_p7(G: SrgGraph, k, gamma, p, paths=None):
     with gp.Env(empty=True) as env:
         env.setParam('OutputFlag', 0)
         env.setParam('Method', 0)
@@ -15,7 +15,7 @@ def solve_p7(G: SrgGraph, k, gamma, p: list, paths=None):
         srg = G.srg
         commodities = G.commodities
         g = G.graph
-        if not paths:
+        if paths is None:
             paths = G.all_paths(k)
 
         num_srg = len(srg)
