@@ -59,26 +59,25 @@ def run(G: SrgGraph, k: int, gamma: float = None, beta: float = None, output=Tru
     teavar_end = time.perf_counter()
     print(f'TeaVaR time: {teavar_end - teavar_start}')
 
-    if output:
-        m.update()
-        tmp = {}
-        for k, v in W.items():
-            tmp[k] = v.x
-        print_flows_te(G, tmp, paths, p, beta)
+
+    m.update()
+    tmp = {}
+    for k, v in W.items():
+        tmp[k] = v.x
+    print_flows_te(G, tmp, paths, p, beta, output)
 
     # Solve TeaVaR w/ budget constraints, Max EXT
-    print('Part 2: Max EXT w/ budget constraints=======================')
-    maxext_start = time.perf_counter()
-    W, m = solve_p7(G, k, gamma, p, paths)
-    maxext_end = time.perf_counter()
-    print(f'MaxFlow time: {maxext_end - maxext_start}')
-
-    if output:
-        m.update()
-        tmp = {}
-        for k, v in W.items():
-            tmp[k] = v.x
-        print_flows_te(G, tmp, paths, p, beta)
+    # print('Part 2: Max EXT w/ budget constraints=======================')
+    # maxext_start = time.perf_counter()
+    # W, m = solve_p7(G, k, gamma, p, paths)
+    # maxext_end = time.perf_counter()
+    # print(f'MaxFlow time: {maxext_end - maxext_start}')
+    #
+    # m.update()
+    # tmp = {}
+    # for k, v in W.items():
+    #     tmp[k] = v.x
+    # print_flows_te(G, tmp, paths, p, beta, output)
 
     print('Part 3: LP reformulation =====================')
     # Maximum flow
@@ -153,14 +152,13 @@ def run(G: SrgGraph, k: int, gamma: float = None, beta: float = None, output=Tru
     lp_end = time.perf_counter()
     print(f'LP time: {lp_end - lp_start}')
 
-    if output:
-        cvar = cvar_2(G, tmp, beta, p, non_terminals)
-
-        print_flows(G, tmp, final_R, p)
-        print(f'Final CVaR = {cvar:.3f}')
-        print(f'alpha = {alpha.x:.3f}')
+    cvar = cvar_2(G, tmp, beta, p, non_terminals)
+    print_flows(G, tmp, final_R, p, output)
+    print(f'CVaR({beta})={cvar:.3f}, alpha={alpha.x:.3f}')
 
 
 if __name__ == '__main__':
-    G = grid.get_graph(6, 0)
-    run(G, 0, output=False)
+    for beta in [0.9, 0.95, 0.99]:
+        print(f'*************Beta is {beta}*************')
+        G = grid.get_graph(6, 0)
+        run(G, 0, beta=beta, output=False)
