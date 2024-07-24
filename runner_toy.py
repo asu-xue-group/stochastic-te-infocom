@@ -5,6 +5,7 @@ from graphs.srg_graph import SrgGraph
 from lp_solvers import *
 from utilities.cycle_check import check_cycle
 from utilities.print_formatting import *
+from numpy.random import Generator, PCG64
 import time
 
 
@@ -14,6 +15,11 @@ def run(G: SrgGraph, k: int, gamma: float = None, beta: float = None, output=Tru
     # Draw the network / sanity check
     # nx.draw(G, with_labels=True, font_weight='bold')
     # plt.show()
+
+    paths = G.k_paths(k)
+    G.generate_srg(paths, 3, rand)
+
+    print(paths)
 
     srg = G.srg
     num_srg = len(srg)
@@ -51,8 +57,6 @@ def run(G: SrgGraph, k: int, gamma: float = None, beta: float = None, output=Tru
     else:
         print(f'gamma={gamma}')
 
-    paths = G.all_paths(k)
-
     print('Part 1: TeaVar w/ budget constraints (min CVaR)=======================')
     teavar_start = time.perf_counter()
     # Solve TeaVaR w/ budget constraints, min CVaR
@@ -60,12 +64,14 @@ def run(G: SrgGraph, k: int, gamma: float = None, beta: float = None, output=Tru
     teavar_end = time.perf_counter()
     print(f'TeaVaR time: {teavar_end - teavar_start}')
 
-
-    m.update()
-    tmp = {}
-    for k, v in W.items():
-        tmp[k] = v.x
-    print_flows_te(G, tmp, paths, p, beta, output)
+    if m.Status == GRB.OPTIMAL:
+        m.update()
+        tmp = {}
+        for k, v in W.items():
+            tmp[k] = v.x
+        print_flows_te(G, tmp, paths, p, beta, output)
+    else:
+        print('TeaVaR was unable to find a solution')
 
     # Solve TeaVaR w/ budget constraints, Max EXT
     # print('Part 2: Max EXT w/ budget constraints=======================')
@@ -159,9 +165,10 @@ def run(G: SrgGraph, k: int, gamma: float = None, beta: float = None, output=Tru
 
 
 if __name__ == '__main__':
-    for beta in [0.9, 0.95, 0.99]:
-        for n in [50, 100, 200, 400, 800, 1600]:
+    for n in [50, 100, 200, 400]:
+        rand = Generator(PCG64(1))
+        G = waxman.get_graph(n, seed=1, rand=rand)
+
+        for beta in [0.9, 0.95, 0.99]:
             print(f'*************Beta is {beta}, n is {n}*************')
-            # G = grid.get_graph(6, 0)
-            G = waxman.get_graph(100, seed=1)
-            run(G, 3, gamma=1, beta=beta, output=False)
+            run(G, 5, gamma=0.3, beta=beta, output=False)

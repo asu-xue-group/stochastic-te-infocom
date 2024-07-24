@@ -16,7 +16,7 @@ def solve_p7(G: SrgGraph, k, gamma, p, paths=None):
         commodities = G.commodities
         g = G.graph
         if paths is None:
-            paths = G.all_paths(k)
+            paths = G.k_paths(k)
 
         num_srg = len(srg)
         # These variables are used to index the commodities, paths, and SRGs (for Gurobi variables).
