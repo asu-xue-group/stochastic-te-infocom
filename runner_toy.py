@@ -1,5 +1,6 @@
 import graphs.toy_extended as toy_ext
 import graphs.grid as grid
+import graphs.waxman as waxman
 from graphs.srg_graph import SrgGraph
 from lp_solvers import *
 from utilities.cycle_check import check_cycle
@@ -159,6 +160,8 @@ def run(G: SrgGraph, k: int, gamma: float = None, beta: float = None, output=Tru
 
 if __name__ == '__main__':
     for beta in [0.9, 0.95, 0.99]:
-        print(f'*************Beta is {beta}*************')
-        G = grid.get_graph(6, 0)
-        run(G, 0, beta=beta, output=False)
+        for n in [50, 100, 200, 400, 800, 1600]:
+            print(f'*************Beta is {beta}, n is {n}*************')
+            # G = grid.get_graph(6, 0)
+            G = waxman.get_graph(100, seed=1)
+            run(G, 3, gamma=1, beta=beta, output=False)

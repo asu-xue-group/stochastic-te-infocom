@@ -10,16 +10,16 @@ def print_flows(G: SrgGraph, W, R, p, output_flow=True):
     Q = range(int(math.pow(2, num_srg)))
 
     # Results in a more readable format
-    print('\n==========================================')
-    print('Working Flow')
-    # check = all([sum([W_plus[i, e[0], e[1]] for i in I]) <= G[e[0]][e[1]]['cap'] for e in E])
-    # print(f'Capacity check: {check}')
-    for i in I:
-        sat = (sum([W[i, e[0], e[1]] for e in g.in_edges(commodities[i].t)])
-               - sum([W[i, e[0], e[1]] for e in g.out_edges(commodities[i].t)]))
-        print(f'Commodity {i} satisfied: {sat:.3f} out of {commodities[i].demand}')
+    if output_flow:
+        print('\n==========================================')
+        print('Working Flow')
+        # check = all([sum([W_plus[i, e[0], e[1]] for i in I]) <= G[e[0]][e[1]]['cap'] for e in E])
+        # print(f'Capacity check: {check}')
+        for i in I:
+            sat = (sum([W[i, e[0], e[1]] for e in g.in_edges(commodities[i].t)])
+                   - sum([W[i, e[0], e[1]] for e in g.out_edges(commodities[i].t)]))
+            print(f'Commodity {i} satisfied: {sat:.3f} out of {commodities[i].demand}')
 
-        if output_flow:
             print(f'Flow for commodity {i}: ', end='')
             for k, v in W.items():
                 if k[0] == i and v > 0:
@@ -69,10 +69,10 @@ def print_flows_te(G: SrgGraph, W, paths, p, beta, output_path=True):
     Q = range(int(math.pow(2, num_srg)))
     R = get_R(paths)
 
-    sat = [np.sum([W[i, r] for r in range(len(paths[0]))]) for i in I]
-    for i in I:
-        print(f'Commodity {i} satisfied: {sat[i]:.3f} out of {commodities[i].demand}')
-        if output_path:
+    if output_path:
+        sat = [np.sum([W[i, r] for r in range(len(paths[0]))]) for i in I]
+        for i in I:
+            print(f'Commodity {i} satisfied: {sat[i]:.3f} out of {commodities[i].demand}')
             for r in R[i]:
                 print(f'------ Path {paths[i][r]} has flow {W[i, r]:.3f}')
 

@@ -31,6 +31,3 @@ def get_graph(size, seed):
     g = nx.to_directed(g)
 
     return SrgGraph(g, commodities, srg)
-
-
-get_graph(3, 1)
