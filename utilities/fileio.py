@@ -1,3 +1,5 @@
+import csv
+
 from networkx import DiGraph
 
 
@@ -47,3 +49,15 @@ def print_model(beta, phi, alpha, _lambda, p):
     print(f'diff2={k3 - k2}')
     print(f'(k) LHS w/ beta_7x9={k3}')
     print()
+
+
+def create_csv_file(filepath, header):
+    with open(filepath, 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(header)
+
+
+def append_to_csv(filepath, content):
+    with open(filepath, 'a', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(content)

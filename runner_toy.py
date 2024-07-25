@@ -1,3 +1,5 @@
+from concurrent.futures import ProcessPoolExecutor
+
 import graphs.toy_extended as toy_ext
 import graphs.grid as grid
 import graphs.waxman as waxman
@@ -6,20 +8,24 @@ from lp_solvers import *
 from utilities.cycle_check import check_cycle
 from utilities.print_formatting import *
 from numpy.random import Generator, PCG64
+from utilities.fileio import create_csv_file, append_to_csv
 import time
+from functools import partial
 
 
-def run(G: SrgGraph, k: int, gamma: float = None, beta: float = None, output=True):
+def run(k: int, gamma: float = None, beta: float = None, n: int = 100, m=3, output=False):
     # logging.getLogger().setLevel(logging.INFO)
 
     # Draw the network / sanity check
     # nx.draw(G, with_labels=True, font_weight='bold')
     # plt.show()
 
-    paths = G.k_paths(k)
-    G.generate_srg(paths, 3, rand)
+    seed = 1
+    rand = Generator(PCG64(seed))
+    G = waxman.get_graph(n, seed=seed, rand=rand)
 
-    print(paths)
+    paths = G.k_paths(k)
+    G.generate_srg(paths, m, rand)
 
     srg = G.srg
     num_srg = len(srg)
@@ -55,38 +61,64 @@ def run(G: SrgGraph, k: int, gamma: float = None, beta: float = None, output=Tru
         logging.critical('No flow can be established for the input.')
         exit(-1)
     else:
-        print(f'gamma={gamma}')
+        pass
+        # print(f'gamma={gamma}')
 
-    print('Part 1: TeaVar w/ budget constraints (min CVaR)=======================')
-    teavar_start = time.perf_counter()
-    # Solve TeaVaR w/ budget constraints, min CVaR
-    W, m = solve_p6(G, k, gamma, beta, p, paths)
-    teavar_end = time.perf_counter()
-    print(f'TeaVaR time: {teavar_end - teavar_start}')
+    # print('Part 1: TeaVar w/ budget constraints (min CVaR)=======================')
+    gamma_ub = gamma
+    gamma_lb = 0.0
+    epsilon = 1e-6
+    best_gamma = 0.0
+    W_best = None
+    m_best = None
+    teavar_s_best = None
+    teavar_e_best = None
+    teavar_ext = 0.0
+    teavar_cvar = 0.0
 
-    if m.Status == GRB.OPTIMAL:
-        m.update()
+    while gamma_ub - gamma_lb > epsilon:
+        curr_gamma = (gamma_ub + gamma_lb) / 2.0
+        teavar_start = time.perf_counter()
+        # Solve TeaVaR w/ budget constraints, min CVaR
+        W, mod = solve_p6(G, k, curr_gamma, beta, p, paths)
+        teavar_end = time.perf_counter()
+
+        if mod.Status == GRB.OPTIMAL:
+            if best_gamma < curr_gamma:
+                best_gamma = curr_gamma
+                W_best = W
+                m_best = mod
+                teavar_s_best = teavar_start
+                teavar_e_best = teavar_end
+            gamma_lb = curr_gamma
+        else:
+            gamma_ub = curr_gamma
+
+    if best_gamma > 0.0:
+        # print(f'Best gamma for TeaVaR is {best_gamma}')
+        # print(f'TeaVaR time: {teavar_e_best - teavar_s_best}')
+        m_best.update()
         tmp = {}
-        for k, v in W.items():
+        for k, v in W_best.items():
             tmp[k] = v.x
-        print_flows_te(G, tmp, paths, p, beta, output)
+        teavar_ext, teavar_cvar = print_flows_te(G, tmp, paths, p, beta, output)
     else:
         print('TeaVaR was unable to find a solution')
 
     # Solve TeaVaR w/ budget constraints, Max EXT
     # print('Part 2: Max EXT w/ budget constraints=======================')
     # maxext_start = time.perf_counter()
-    # W, m = solve_p7(G, k, gamma, p, paths)
+    # W, mod = solve_p7(G, k, gamma, p, paths)
     # maxext_end = time.perf_counter()
     # print(f'MaxFlow time: {maxext_end - maxext_start}')
     #
-    # m.update()
+    # mod.update()
     # tmp = {}
     # for k, v in W.items():
     #     tmp[k] = v.x
     # print_flows_te(G, tmp, paths, p, beta, output)
 
-    print('Part 3: LP reformulation =====================')
+    # print('Part 3: LP reformulation =====================')
     # Maximum flow
     W_max = np.sum([gamma * c.demand for c in commodities])
     logging.info(f'W_max={W_max}')
@@ -108,14 +140,14 @@ def run(G: SrgGraph, k: int, gamma: float = None, beta: float = None, output=Tru
         curr_lambda = (lambda_ub + lambda_lb) / 2.0
         logging.info(f'Iteration {itr}, current lambda={curr_lambda} [{lambda_lb}-{lambda_ub}]')
 
-        W_curr, flows, phi, m = solve_p5(G, beta, gamma, curr_lambda, p, non_terminals)
+        W_curr, flows, phi, mod = solve_p5(G, beta, gamma, curr_lambda, p, non_terminals)
         # the current model is infeasible, we need to increase the lambda to relax the constraints
         if not W_curr:
             lambda_lb = curr_lambda
             logging.debug('Infeasible model, increasing lambda')
         # The current model is feasible; however we need to check for cycles
         else:
-            m.update()
+            mod.update()
             # If it contains a cycle, then we need to increase the lambda
             if check_cycle(g, flows):
                 lambda_lb = curr_lambda
@@ -124,7 +156,7 @@ def run(G: SrgGraph, k: int, gamma: float = None, beta: float = None, output=Tru
             else:
                 best_lambda = curr_lambda
                 best_flows = flows
-                best_m = m
+                best_m = mod
                 best_phi = phi
 
                 lambda_ub = curr_lambda
@@ -134,7 +166,7 @@ def run(G: SrgGraph, k: int, gamma: float = None, beta: float = None, output=Tru
                     logging.info('Current flow value is already equal to opt, no need for further optimization')
                     break
         itr += 1
-    print(f'Bisection took {itr} iterations')
+    # print(f'Bisection took {itr} iterations')
     if best_lambda == -1:
         logging.error('\nFailed to find an acyclic solution from the input')
     else:
@@ -151,24 +183,33 @@ def run(G: SrgGraph, k: int, gamma: float = None, beta: float = None, output=Tru
     # Recover the flow with max throughput
     final_R = {}
     for q in Q:
-        _, R, m = solve_p4(G, tmp, q, p, non_terminals)
-        m.update()
+        _, R, mod = solve_p4(G, tmp, q, p, non_terminals)
+        mod.update()
         for k, v in R.items():
             if v.x > 0:
                 final_R[k] = v.x
     lp_end = time.perf_counter()
-    print(f'LP time: {lp_end - lp_start}')
+    # print(f'LP time: {lp_end - lp_start}')
 
-    cvar = cvar_2(G, tmp, beta, p, non_terminals)
-    print_flows(G, tmp, final_R, p, output)
-    print(f'CVaR({beta})={cvar:.3f}, alpha={alpha.x:.3f}')
+    lp_cvar = cvar_2(G, tmp, beta, p, non_terminals)
+    lp_ext = print_flows(G, tmp, final_R, p, output)
+    # print(f'CVaR({beta})={lp_cvar:.3f}, alpha={alpha.x:.3f}\n')
+
+    append_to_csv('results.csv', [n, m, best_gamma, teavar_cvar, teavar_ext, gamma, lp_cvar, lp_ext])
+
+
+def main():
+    prun = partial(run, 3, None, None)
+    n = [40, 80, 160, 320] * 4
+    m = [3] * 4 + [4] * 4 + [5] * 4 + [6] * 4
+    # targets = sorted(list(itertools.product(n, m)), key=lambda x: x[1])
+
+    create_csv_file('results.csv', ['n', 'm', 'tvar-gamma', 'tvar-cvar', 'tvar-ext',
+                                    'our-gamma', 'our-cvar', 'our-ext'])
+
+    with ProcessPoolExecutor() as executor:
+        executor.map(prun, n, m)
 
 
 if __name__ == '__main__':
-    for n in [50, 100, 200, 400]:
-        rand = Generator(PCG64(1))
-        G = waxman.get_graph(n, seed=1, rand=rand)
-
-        for beta in [0.9, 0.95, 0.99]:
-            print(f'*************Beta is {beta}, n is {n}*************')
-            run(G, 5, gamma=0.3, beta=beta, output=False)
+    main()

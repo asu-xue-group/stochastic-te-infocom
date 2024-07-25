@@ -56,7 +56,8 @@ def print_flows(G: SrgGraph, W, R, p, output_flow=True):
             if output_flow:
                 print(f'Total throughput = {total:.3f}')
                 print(f'----------------------------------------')
-        print(f'Expected throughput = {ext:.3f}')
+        # print(f'Expected throughput = {ext:.3f}')
+        return ext
 
 
 def print_flows_te(G: SrgGraph, W, paths, p, beta, output_path=True):
@@ -77,7 +78,8 @@ def print_flows_te(G: SrgGraph, W, paths, p, beta, output_path=True):
                 print(f'------ Path {paths[i][r]} has flow {W[i, r]:.3f}')
 
     ext = np.sum([p[q] * np.sum([W[i, r] * y(tuple(paths[i][r]), q, srg, l) for i in I for r in R[i]]) for q in Q])
-    print(f'Expected throughput={ext:.3f}')
+    # print(f'Expected throughput={ext:.3f}')
     cvar, alpha = cvar_te(G, paths, beta, p, W)
-    print(f'CVaR({beta})={cvar:.3f}, alpha={alpha:.3f}')
-    print()
+    # print(f'CVaR({beta})={cvar:.3f}, alpha={alpha:.3f}')
+    # print()
+    return ext, cvar
