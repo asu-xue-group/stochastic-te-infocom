@@ -1,3 +1,4 @@
+import csv
 from concurrent.futures import ProcessPoolExecutor
 
 import graphs.toy_extended as toy_ext
@@ -12,6 +13,8 @@ from utilities.fileio import create_csv_file, append_to_csv
 import time
 from functools import partial
 
+existing_entry = set()
+
 
 def run(k: int, gamma: float = None, beta: float = None, n: int = 100, m=3, seed=1, output=False):
     # logging.getLogger().setLevel(logging.INFO)
@@ -19,6 +22,9 @@ def run(k: int, gamma: float = None, beta: float = None, n: int = 100, m=3, seed
     # Draw the network / sanity check
     # nx.draw(G, with_labels=True, font_weight='bold')
     # plt.show()
+
+    if (n, seed) in existing_entry:
+        return
 
     rand = Generator(PCG64(seed))
     G = waxman.get_graph(n, seed=seed, rand=rand)
@@ -205,8 +211,14 @@ def main():
     m = [5] * 300
     # targets = sorted(list(itertools.product(n, m)), key=lambda x: x[1])
 
-    create_csv_file('results.csv', ['n', 'e', 'm', 'seed', 'tvar-gamma', 'tvar-cvar', 'tvar-ext',
-                                    'our-gamma', 'our-cvar', 'our-ext'])
+    if os.path.isfile('results.csv'):
+        with open('results.csv') as f:
+            reader = csv.reader(f)
+            for row in reader:
+                existing_entry.add((row[0], row[3]))
+    else:
+        create_csv_file('results.csv', ['n', 'e', 'm', 'seed', 'tvar-gamma', 'tvar-cvar', 'tvar-ext',
+                                        'our-gamma', 'our-cvar', 'our-ext'])
 
     with ProcessPoolExecutor() as executor:
         executor.map(prun, n, m, seed)
