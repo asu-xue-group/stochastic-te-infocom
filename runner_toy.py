@@ -194,7 +194,7 @@ def run(k: int, gamma: float = None, beta: float = None, n: int = 100, m=3, seed
     lp_ext = print_flows(G, tmp, final_R, p, output)
     # print(f'CVaR({beta})={lp_cvar:.3f}, alpha={alpha.x:.3f}\n')
 
-    append_to_csv('results.csv', [n, g.number_of_edges(), m, best_gamma, teavar_cvar,
+    append_to_csv('results.csv', [n, g.number_of_edges(), m, seed, best_gamma, teavar_cvar,
                                   teavar_ext, gamma, lp_cvar, lp_ext])
 
 
