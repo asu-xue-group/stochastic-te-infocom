@@ -13,14 +13,13 @@ import time
 from functools import partial
 
 
-def run(k: int, gamma: float = None, beta: float = None, n: int = 100, m=3, output=False):
+def run(k: int, gamma: float = None, beta: float = None, n: int = 100, m=3, seed=1, output=False):
     # logging.getLogger().setLevel(logging.INFO)
 
     # Draw the network / sanity check
     # nx.draw(G, with_labels=True, font_weight='bold')
     # plt.show()
 
-    seed = 1
     rand = Generator(PCG64(seed))
     G = waxman.get_graph(n, seed=seed, rand=rand)
 
@@ -195,20 +194,22 @@ def run(k: int, gamma: float = None, beta: float = None, n: int = 100, m=3, outp
     lp_ext = print_flows(G, tmp, final_R, p, output)
     # print(f'CVaR({beta})={lp_cvar:.3f}, alpha={alpha.x:.3f}\n')
 
-    append_to_csv('results.csv', [n, m, best_gamma, teavar_cvar, teavar_ext, gamma, lp_cvar, lp_ext])
+    append_to_csv('results.csv', [n, g.number_of_edges(), m, best_gamma, teavar_cvar,
+                                  teavar_ext, gamma, lp_cvar, lp_ext])
 
 
 def main():
     prun = partial(run, 3, None, None)
-    n = [40, 80, 160, 320] * 4
-    m = [3] * 4 + [4] * 4 + [5] * 4 + [6] * 4
+    seed = list(range(100)) * 3
+    n = [40, 80, 160] * 100
+    m = [5] * 300
     # targets = sorted(list(itertools.product(n, m)), key=lambda x: x[1])
 
-    create_csv_file('results.csv', ['n', 'm', 'tvar-gamma', 'tvar-cvar', 'tvar-ext',
+    create_csv_file('results.csv', ['n', 'e', 'm', 'seed', 'tvar-gamma', 'tvar-cvar', 'tvar-ext',
                                     'our-gamma', 'our-cvar', 'our-ext'])
 
     with ProcessPoolExecutor() as executor:
-        executor.map(prun, n, m)
+        executor.map(prun, n, m, seed)
 
 
 if __name__ == '__main__':
