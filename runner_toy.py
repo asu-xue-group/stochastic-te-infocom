@@ -215,7 +215,7 @@ def main():
         with open('results.csv') as f:
             reader = csv.reader(f)
             for row in reader:
-                existing_entry.add((row[0], row[3]))
+                existing_entry.add((int(row[0]), int(row[3])))
     else:
         create_csv_file('results.csv', ['n', 'e', 'm', 'seed', 'tvar-gamma', 'tvar-cvar', 'tvar-ext',
                                         'our-gamma', 'our-cvar', 'our-ext'])
