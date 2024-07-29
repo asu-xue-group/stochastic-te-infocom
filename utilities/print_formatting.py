@@ -82,4 +82,4 @@ def print_flows_te(G: SrgGraph, W, paths, p, beta, output_path=True):
     cvar, alpha = cvar_te(G, paths, beta, p, W)
     # print(f'CVaR({beta})={cvar:.3f}, alpha={alpha:.3f}')
     # print()
-    return ext, cvar
+    return ext, cvar, alpha

@@ -100,7 +100,7 @@ def run(k: int, gamma: float = None, beta: float = None, output=False):
         tmp = {}
         for k, v in W_best.items():
             tmp[k] = v.x
-        teavar_ext, teavar_cvar = print_flows_te(G, tmp, paths, p, beta, output)
+        teavar_ext, teavar_cvar, teavar_alpha = print_flows_te(G, tmp, paths, p, beta, output)
     else:
         print('TeaVaR was unable to find a solution')
 
@@ -115,8 +115,8 @@ def run(k: int, gamma: float = None, beta: float = None, output=False):
     tmp = {}
     for k, v in W.items():
         tmp[k] = v.x
-    ml_ext, ml_cvar = print_flows_te(G, tmp, paths, p, beta, output)
-    print(f'MinEXP EXT={ml_ext:.3f}, CVaR({beta})={ml_cvar}\n')
+    ml_ext, ml_cvar, alpha = print_flows_te(G, tmp, paths, p, beta, output)
+    print(f'MinEXP EXT={ml_ext:.3f}, alpha={alpha:.3f}, CVaR({beta})={ml_cvar:.3f}\n')
 
     print('Part 3: LP reformulation =====================')
     # Maximum flow
@@ -193,7 +193,7 @@ def run(k: int, gamma: float = None, beta: float = None, output=False):
 
     lp_cvar, _, _ = cvar_2(G, tmp, beta, p, non_terminals)
     lp_ext = float(print_flows(G, tmp, final_R, p, output))
-    print(f'EXT={lp_ext}, CVaR({beta})={lp_cvar:.3f}, alpha={alpha.x:.3f}\n')
+    print(f'EXT={lp_ext:.3f}, CVaR({beta})={lp_cvar:.3f}, alpha={alpha.x:.3f}\n')
 
     hd_W = read_W(g, I, 'test_input/handrawn.txt')
     hd_cvar, R, m = cvar_2(G, hd_W, beta, p, non_terminals)
@@ -203,7 +203,7 @@ def run(k: int, gamma: float = None, beta: float = None, output=False):
 
 
 def main():
-    run(0, beta=0.95, output=True)
+    run(0, beta=0.91, output=True)
 
 
 if __name__ == '__main__':
