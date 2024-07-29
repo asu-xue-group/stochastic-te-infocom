@@ -51,7 +51,7 @@ def cvar_2(G: SrgGraph, W, beta, p, non_terminals):
         m.setObjective(_lambda, GRB.MINIMIZE)
 
         m.optimize()
-        return m.ObjVal
+        return m.ObjVal, R, m
 
 
 def cvar_3(G: SrgGraph, W, R, beta, p):
