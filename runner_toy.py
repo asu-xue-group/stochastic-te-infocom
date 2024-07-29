@@ -105,17 +105,18 @@ def run(k: int, gamma: float = None, beta: float = None, output=False):
         print('TeaVaR was unable to find a solution')
 
     # Solve TeaVaR w/ budget constraints, Max EXT
-    # print('Part 2: Max EXT w/ budget constraints=======================')
-    # maxext_start = time.perf_counter()
-    # W, mod = solve_p7(G, k, gamma, p, paths)
-    # maxext_end = time.perf_counter()
-    # print(f'MaxFlow time: {maxext_end - maxext_start}')
-    #
-    # mod.update()
-    # tmp = {}
-    # for k, v in W.items():
-    #     tmp[k] = v.x
-    # print_flows_te(G, tmp, paths, p, beta, output)
+    print('Part 2: Max EXT w/ budget constraints=======================')
+    maxext_start = time.perf_counter()
+    W, mod = solve_p7(G, k, gamma, p, paths)
+    maxext_end = time.perf_counter()
+    print(f'MaxFlow time: {maxext_end - maxext_start}')
+
+    mod.update()
+    tmp = {}
+    for k, v in W.items():
+        tmp[k] = v.x
+    ml_ext, ml_cvar = print_flows_te(G, tmp, paths, p, beta, output)
+    print(f'MinEXP EXT={ml_ext:.3f}, CVaR({beta})={ml_cvar}\n')
 
     print('Part 3: LP reformulation =====================')
     # Maximum flow
@@ -202,7 +203,7 @@ def run(k: int, gamma: float = None, beta: float = None, output=False):
 
 
 def main():
-    run(2, beta=0.95, output=True)
+    run(0, beta=0.95, output=True)
 
 
 if __name__ == '__main__':

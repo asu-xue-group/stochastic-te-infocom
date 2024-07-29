@@ -39,8 +39,8 @@ def get_graph(alt=False):
         g.add_edge(2, 8, cap=2, cost=0)
 
     commodities = [
-        Commodity(1, 7, 3, 6),
-        Commodity(2, 8, 3, 6)
+        Commodity(1, 7, 4, 6),
+        Commodity(2, 8, 4, 6)
     ]
 
     srg = [
