@@ -29,9 +29,9 @@ def main():
     # Solve the LP
     opt_val = solve_p2(commodities, srg, G)
 
-    print('********************************************')
-
-    solve_p4(commodities, srg, G, opt_val)
+    # print('********************************************')
+    #
+    # solve_p4(commodities, srg, G, opt_val)
 
 
 if __name__ == '__main__':

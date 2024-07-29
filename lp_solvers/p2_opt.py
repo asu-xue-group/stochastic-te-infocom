@@ -2,6 +2,7 @@ import gurobipy as gp
 import networkx as nx
 from gurobipy import *
 from networkx import DiGraph, Graph
+from utilities.cvar_calc import cvar_3
 import numpy as np
 import itertools
 from lp_solvers.common import *
@@ -33,7 +34,7 @@ def solve_p2(commodities: list, srg: list, G: Graph):
         non_terminals[i] = all_nodes
 
     # CONSTANTS
-    beta = 0.9
+    beta = 0.95
     gamma = 1.0
 
     # VARIABLES
@@ -75,8 +76,8 @@ def solve_p2(commodities: list, srg: list, G: Graph):
                  for e in E)
 
     # Eq. 27
-    m.addConstrs(gp.quicksum(R_plus[i, q, e[0], e[1]] + R_plus[i, q, e[1], e[0]] for i in I) <= G[e[0]][e[1]]['cap']
-                 for e in E for q in Q)
+    # m.addConstrs(gp.quicksum(R_plus[i, q, e[0], e[1]] + R_plus[i, q, e[1], e[0]] for i in I) <= G[e[0]][e[1]]['cap']
+    #              for e in E for q in Q)
 
     # Eq. 28
     m.addConstrs(R_plus[i, q, *e] <= W_plus[i, *e] for e in E for q in Q for i in I)
@@ -142,6 +143,19 @@ def solve_p2(commodities: list, srg: list, G: Graph):
 
         print(f'Total throughput: {total:.3f}')
         print(f'----------------------------------------')
+
+    W = {}
+    for k, v in W_plus.items():
+        W[k] = v.x
+
+    R = {}
+    for k, v in R_plus.items():
+        R[k] = v.x
+
+    res, m = cvar_3(G, srg, commodities, W, R, beta, p)
+    m.update()
+    alpha = m.getVarByName('alpha')
+    print(f'CVaR({beta})={res}, alpha={alpha.x}')
     #
     # print('\n==========================================')
     # for i in I:
