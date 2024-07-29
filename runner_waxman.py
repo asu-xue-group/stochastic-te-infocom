@@ -1,7 +1,6 @@
 from concurrent.futures import ProcessPoolExecutor
 
 import graphs.toy_extended as toy_ext
-import graphs.toy as toy
 import graphs.grid as grid
 import graphs.waxman as waxman
 from graphs.srg_graph import SrgGraph
@@ -11,18 +10,23 @@ from utilities.print_formatting import *
 from numpy.random import Generator, PCG64
 from utilities.fileio import create_csv_file, append_to_csv
 import time
-from utilities.fileio import read_W
 from functools import partial
 
 
-def run(k: int = 2, gamma: float = None, beta: float = None, output=False):
+def run(k: int, gamma: float = None, beta: float = None, n: int = 100, m=3, output=False):
     # logging.getLogger().setLevel(logging.INFO)
 
     # Draw the network / sanity check
     # nx.draw(G, with_labels=True, font_weight='bold')
     # plt.show()
-    G = toy.get_graph(alt=True)
+
+    seed = 1
+    rand = Generator(PCG64(seed))
+    G = waxman.get_graph(n, seed=seed, rand=rand)
+
     paths = G.k_paths(k)
+    G.generate_srg(paths, m, rand)
+
     srg = G.srg
     num_srg = len(srg)
     g = G.graph
@@ -57,9 +61,10 @@ def run(k: int = 2, gamma: float = None, beta: float = None, output=False):
         logging.critical('No flow can be established for the input.')
         exit(-1)
     else:
-        print(f'gamma={gamma}')
+        pass
+        # print(f'gamma={gamma}')
 
-    print('Part 1: TeaVar w/ budget constraints (min CVaR)=======================')
+    # print('Part 1: TeaVar w/ budget constraints (min CVaR)=======================')
     gamma_ub = gamma
     gamma_lb = 0.0
     epsilon = 1e-6
@@ -90,8 +95,8 @@ def run(k: int = 2, gamma: float = None, beta: float = None, output=False):
             gamma_ub = curr_gamma
 
     if best_gamma > 0.0:
-        print(f'Best gamma for TeaVaR is {best_gamma}')
-        print(f'TeaVaR time: {teavar_e_best - teavar_s_best}')
+        # print(f'Best gamma for TeaVaR is {best_gamma}')
+        # print(f'TeaVaR time: {teavar_e_best - teavar_s_best}')
         m_best.update()
         tmp = {}
         for k, v in W_best.items():
@@ -113,7 +118,7 @@ def run(k: int = 2, gamma: float = None, beta: float = None, output=False):
     #     tmp[k] = v.x
     # print_flows_te(G, tmp, paths, p, beta, output)
 
-    print('Part 3: LP reformulation =====================')
+    # print('Part 3: LP reformulation =====================')
     # Maximum flow
     W_max = np.sum([gamma * c.demand for c in commodities])
     logging.info(f'W_max={W_max}')
@@ -161,7 +166,7 @@ def run(k: int = 2, gamma: float = None, beta: float = None, output=False):
                     logging.info('Current flow value is already equal to opt, no need for further optimization')
                     break
         itr += 1
-    print(f'Bisection took {itr} iterations')
+    # print(f'Bisection took {itr} iterations')
     if best_lambda == -1:
         logging.error('\nFailed to find an acyclic solution from the input')
     else:
@@ -184,18 +189,26 @@ def run(k: int = 2, gamma: float = None, beta: float = None, output=False):
             if v.x > 0:
                 final_R[k] = v.x
     lp_end = time.perf_counter()
-    print(f'LP time: {lp_end - lp_start}')
+    # print(f'LP time: {lp_end - lp_start}')
 
     lp_cvar = cvar_2(G, tmp, beta, p, non_terminals)
     lp_ext = print_flows(G, tmp, final_R, p, output)
-    print(f'EXT={lp_ext}, CVaR({beta})={lp_cvar:.3f}, alpha={alpha.x:.3f}\n')
+    # print(f'CVaR({beta})={lp_cvar:.3f}, alpha={alpha.x:.3f}\n')
 
-    hd_cvar = cvar_2(G, read_W(g, [0, 1], 'test_input/handrawn.txt'), beta, p, non_terminals)
-    print(f'Hand-drawn CVaR: {hd_cvar}')
+    append_to_csv('results.csv', [n, m, best_gamma, teavar_cvar, teavar_ext, gamma, lp_cvar, lp_ext])
 
 
 def main():
-    run(output=True, beta=0.95)
+    prun = partial(run, 3, None, None)
+    n = [40, 80, 160, 320] * 4
+    m = [3] * 4 + [4] * 4 + [5] * 4 + [6] * 4
+    # targets = sorted(list(itertools.product(n, m)), key=lambda x: x[1])
+
+    create_csv_file('results.csv', ['n', 'm', 'tvar-gamma', 'tvar-cvar', 'tvar-ext',
+                                    'our-gamma', 'our-cvar', 'our-ext'])
+
+    with ProcessPoolExecutor() as executor:
+        executor.map(prun, n, m)
 
 
 if __name__ == '__main__':
