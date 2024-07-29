@@ -34,7 +34,7 @@ def solve_p2(commodities: list, srg: list, G: Graph):
         non_terminals[i] = all_nodes
 
     # CONSTANTS
-    beta = 0.95
+    beta = 0.9
     gamma = 1.0
 
     # VARIABLES
@@ -157,7 +157,7 @@ def solve_p2(commodities: list, srg: list, G: Graph):
     res, m = cvar_3(G, srg, commodities, W, R, beta, p)
     m.update()
     alpha = m.getVarByName('alpha')
-    print(f'EXT={ext:.3f}, CVaR({beta})={res}, alpha={alpha.x}')
+    print(f'EXT={ext:.3f}, CVaR({beta})={res:.3f}, alpha={alpha.x:.3f}')
     #
     # print('\n==========================================')
     # for i in I:
