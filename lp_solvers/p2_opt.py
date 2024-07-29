@@ -115,6 +115,7 @@ def solve_p2(commodities: list, srg: list, G: Graph):
                 print(f'({k[1]}, {k[2]}), {v.x:.3f} ', end='')
         print('\n')
 
+    ext = 0.0
     print('\n==========================================')
     print('Recovery Flow')
     for q in Q:
@@ -141,7 +142,8 @@ def solve_p2(commodities: list, srg: list, G: Graph):
                     print(f'({k[2]}, {k[3]}), {v.x:.3f} ', end='')
             print('\n')
 
-        print(f'Total throughput: {total:.3f}')
+        print(f'Throughput: {total:.3f}')
+        ext += total * p[q]
         print(f'----------------------------------------')
 
     W = {}
@@ -155,7 +157,7 @@ def solve_p2(commodities: list, srg: list, G: Graph):
     res, m = cvar_3(G, srg, commodities, W, R, beta, p)
     m.update()
     alpha = m.getVarByName('alpha')
-    print(f'CVaR({beta})={res}, alpha={alpha.x}')
+    print(f'EXT={ext:.3f}, CVaR({beta})={res}, alpha={alpha.x}')
     #
     # print('\n==========================================')
     # for i in I:
