@@ -202,9 +202,9 @@ def run(k: int, gamma: float = None, beta: float = None, n: int = 100, m=3, seed
 
 def main():
     prun = partial(run, 3, None, None)
-    seed = list(range(120, 500))
-    n = [160] * 20
-    m = [5] * 20
+    seed = list(range(0, 1000)) * 3
+    n = [160] * 3000
+    m = [5] * 3000
     # targets = sorted(list(itertools.product(n, m)), key=lambda x: x[1])
 
     if os.path.isfile('results.csv'):
@@ -217,7 +217,7 @@ def main():
         create_csv_file('results.csv', ['n', 'e', 'm', 'seed', 'tvar-gamma', 'tvar-cvar', 'tvar-ext',
                                         'our-gamma', 'our-cvar', 'our-ext', 'time'])
 
-    with ProcessPoolExecutor(max_workers=10) as executor:
+    with ProcessPoolExecutor() as executor:
         executor.map(prun, n, m, seed)
 
 
