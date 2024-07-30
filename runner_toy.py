@@ -101,6 +101,7 @@ def run(k: int, gamma: float = None, beta: float = None, output=False):
         for k, v in W_best.items():
             tmp[k] = v.x
         teavar_ext, teavar_cvar, teavar_alpha = print_flows_te(G, tmp, paths, p, beta, output)
+        print(f'TeaVaR EXT={teavar_ext:.3f}, CVaR={teavar_cvar:.3f}, alpha={teavar_alpha:.3f}\n')
     else:
         print('TeaVaR was unable to find a solution')
 
