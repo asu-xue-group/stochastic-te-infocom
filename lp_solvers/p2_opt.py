@@ -34,7 +34,7 @@ def solve_p2(commodities: list, srg: list, G: Graph):
         non_terminals[i] = all_nodes
 
     # CONSTANTS
-    beta = 0.9
+    beta = 0.95
     gamma = 1.0
 
     # VARIABLES
@@ -112,7 +112,7 @@ def solve_p2(commodities: list, srg: list, G: Graph):
         print(f'Flow for commodity {i}: ', end='')
         for k, v in W_plus.items():
             if k[0] == i and v.x > 0:
-                print(f'({k[1]}, {k[2]}), {v.x:.3f} ', end='')
+                print(f'({G.nodes[k[1]]["name"]}, {G.nodes[k[2]]["name"]}), {v.x:.3f} ', end=' | ')
         print('\n')
 
     ext = 0.0
@@ -139,7 +139,7 @@ def solve_p2(commodities: list, srg: list, G: Graph):
             print(f'Flow for commodity {i}: ', end='')
             for k, v in R_plus.items():
                 if k[0] == i and k[1] == q and v.x > 0:
-                    print(f'({k[2]}, {k[3]}), {v.x:.3f} ', end='')
+                    print(f'({G.nodes[k[2]]["name"]}, {G.nodes[k[3]]["name"]}), {v.x:.3f} ', end=' | ')
             print('\n')
 
         print(f'Throughput: {total:.3f}')
