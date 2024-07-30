@@ -18,6 +18,8 @@ existing_entry = set()
 
 def run(k: int, gamma: float = None, beta: float = None, n: int = 100, m=3, seed=1, output=False):
     # logging.getLogger().setLevel(logging.INFO)
+    print(f'Starting {n=} {seed=}, pid {os.getpid()}')
+    time_start = time.perf_counter()
 
     # Draw the network / sanity check
     # nx.draw(G, with_labels=True, font_weight='bold')
@@ -27,7 +29,7 @@ def run(k: int, gamma: float = None, beta: float = None, n: int = 100, m=3, seed
         return
 
     rand = Generator(PCG64(seed))
-    G = waxman.get_graph(n, seed=seed, rand=rand)
+    G = waxman.get_graph(n, 0.1, 0.2, seed=seed, rand=rand)
 
     paths = G.k_paths(k)
     G.generate_srg(paths, m, rand)
@@ -76,25 +78,19 @@ def run(k: int, gamma: float = None, beta: float = None, n: int = 100, m=3, seed
     best_gamma = 0.0
     W_best = None
     m_best = None
-    teavar_s_best = None
-    teavar_e_best = None
     teavar_ext = 0.0
     teavar_cvar = 0.0
 
     while gamma_ub - gamma_lb > epsilon:
         curr_gamma = (gamma_ub + gamma_lb) / 2.0
-        teavar_start = time.perf_counter()
         # Solve TeaVaR w/ budget constraints, min CVaR
         W, mod = solve_p6(G, k, curr_gamma, beta, p, paths)
-        teavar_end = time.perf_counter()
 
         if mod.Status == GRB.OPTIMAL:
             if best_gamma < curr_gamma:
                 best_gamma = curr_gamma
                 W_best = W
                 m_best = mod
-                teavar_s_best = teavar_start
-                teavar_e_best = teavar_end
             gamma_lb = curr_gamma
         else:
             gamma_ub = curr_gamma
@@ -106,7 +102,7 @@ def run(k: int, gamma: float = None, beta: float = None, n: int = 100, m=3, seed
         tmp = {}
         for k, v in W_best.items():
             tmp[k] = v.x
-        teavar_ext, teavar_cvar = print_flows_te(G, tmp, paths, p, beta, output)
+        teavar_ext, teavar_cvar, teavar_alpha = print_flows_te(G, tmp, paths, p, beta, output)
     else:
         print('TeaVaR was unable to find a solution')
 
@@ -140,7 +136,6 @@ def run(k: int, gamma: float = None, beta: float = None, n: int = 100, m=3, seed
     best_flows = None
     best_phi = None
 
-    lp_start = time.perf_counter()
     while lambda_ub - lambda_lb > epsilon:
         curr_lambda = (lambda_ub + lambda_lb) / 2.0
         logging.info(f'Iteration {itr}, current lambda={curr_lambda} [{lambda_lb}-{lambda_ub}]')
@@ -193,22 +188,23 @@ def run(k: int, gamma: float = None, beta: float = None, n: int = 100, m=3, seed
         for k, v in R.items():
             if v.x > 0:
                 final_R[k] = v.x
-    lp_end = time.perf_counter()
-    # print(f'LP time: {lp_end - lp_start}')
 
-    lp_cvar = cvar_2(G, tmp, beta, p, non_terminals)
+    lp_cvar, _, _ = cvar_2(G, tmp, beta, p, non_terminals)
     lp_ext = print_flows(G, tmp, final_R, p, output)
     # print(f'CVaR({beta})={lp_cvar:.3f}, alpha={alpha.x:.3f}\n')
 
+    time_end = time.perf_counter()
+    time_diff = time_end - time_start
     append_to_csv('results.csv', [n, g.number_of_edges(), m, seed, best_gamma, teavar_cvar,
-                                  teavar_ext, gamma, lp_cvar, lp_ext])
+                                  teavar_ext, gamma, lp_cvar, lp_ext, time_diff])
+    print(f'{n=}, {seed=} has finished')
 
 
 def main():
     prun = partial(run, 3, None, None)
-    seed = list(range(100)) * 3
-    n = [40, 80, 160] * 100
-    m = [5] * 300
+    seed = list(range(120, 500))
+    n = [160] * 20
+    m = [5] * 20
     # targets = sorted(list(itertools.product(n, m)), key=lambda x: x[1])
 
     if os.path.isfile('results.csv'):
@@ -219,9 +215,9 @@ def main():
                 existing_entry.add((int(row[0]), int(row[3])))
     else:
         create_csv_file('results.csv', ['n', 'e', 'm', 'seed', 'tvar-gamma', 'tvar-cvar', 'tvar-ext',
-                                        'our-gamma', 'our-cvar', 'our-ext'])
+                                        'our-gamma', 'our-cvar', 'our-ext', 'time'])
 
-    with ProcessPoolExecutor() as executor:
+    with ProcessPoolExecutor(max_workers=10) as executor:
         executor.map(prun, n, m, seed)
 
 

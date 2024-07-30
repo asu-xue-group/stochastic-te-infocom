@@ -24,7 +24,7 @@ def run(k: int, gamma: float = None, beta: float = None, output=False):
     # nx.draw(G, with_labels=True, font_weight='bold')
     # plt.show()
 
-    G = toy.get_graph(alt=False)
+    G = toy.get_graph(alt=True)
     paths = G.k_paths(k)
 
     srg = G.srg
