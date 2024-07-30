@@ -24,7 +24,7 @@ def run(k: int, gamma: float = None, beta: float = None, output=False):
     # nx.draw(G, with_labels=True, font_weight='bold')
     # plt.show()
 
-    G = toy.get_graph(alt=True)
+    G = toy.get_graph(alt=False)
     paths = G.k_paths(k)
 
     srg = G.srg
@@ -203,7 +203,7 @@ def run(k: int, gamma: float = None, beta: float = None, output=False):
 
 
 def main():
-    run(0, beta=0.91, output=True)
+    run(0, beta=0.95, output=True)
 
 
 if __name__ == '__main__':
