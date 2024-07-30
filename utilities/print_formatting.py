@@ -43,11 +43,15 @@ def print_flows(G: SrgGraph, W, R, p, output_flow=True):
             for i in I:
                 sat = (sum([R.get((i, q, e[0], e[1]), 0) for e in g.in_edges(commodities[i].t)])
                        - sum([R.get((i, q, e[0], e[1]), 0) for e in g.out_edges(commodities[i].t)]))
+                if not isinstance(sat, float) and not isinstance(sat, int):
+                    sat = sat.getValue()
                 total = total + sat
                 if output_flow:
                     print(f'Commodity {i} satisfied: {sat:.3f} out of {commodities[i].demand}')
                     print(f'Flow for commodity {i}: ', end='')
                     for k, v in R.items():
+                        if not isinstance(v, float) and not isinstance(v, int):
+                            v = v.x
                         if k[0] == i and k[1] == q and v > 0:
                             print(f'({g.nodes[k[2]]["name"]}, {g.nodes[k[3]]["name"]}), {v:.3f} | ', end='')
                     print('\n')

@@ -196,15 +196,17 @@ def run(k: int, gamma: float = None, beta: float = None, output=False):
     lp_ext = float(print_flows(G, tmp, final_R, p, output))
     print(f'EXT={lp_ext:.3f}, CVaR({beta})={lp_cvar:.3f}, alpha={alpha.x:.3f}\n')
 
+    print('==============Hand-drawn===========')
     hd_W = read_W(g, I, 'test_input/handrawn.txt')
     hd_cvar, R, m = cvar_2(G, hd_W, beta, p, non_terminals)
     m.update()
-    hd_ext = float(print_flows(G, hd_W, R, p, output_flow=False).getValue())
-    print(f'Hand-drawn CVaR={hd_cvar}, EXT={hd_ext}')
+    alpha = m.getVarByName('alpha')
+    hd_ext = float(print_flows(G, hd_W, R, p, output))
+    print(f'Hand-drawn CVaR={hd_cvar:.3f}, EXT={hd_ext:.3f}, alpha={alpha.x:.3f}')
 
 
 def main():
-    run(0, beta=0.95, output=True)
+    run(0, beta=0.90, output=True)
 
 
 if __name__ == '__main__':
