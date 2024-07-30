@@ -23,7 +23,7 @@ def print_flows(G: SrgGraph, W, R, p, output_flow=True):
             print(f'Flow for commodity {i}: ', end='')
             for k, v in W.items():
                 if k[0] == i and v > 0:
-                    print(f'({k[1]}, {k[2]}), {v:.3f} | ', end='')
+                    print(f'({g.nodes[k[1]]["name"]}, {g.nodes[k[2]]["name"]}), {v:.3f} | ', end='')
             print('\n')
 
     if R is not None:
@@ -49,7 +49,7 @@ def print_flows(G: SrgGraph, W, R, p, output_flow=True):
                     print(f'Flow for commodity {i}: ', end='')
                     for k, v in R.items():
                         if k[0] == i and k[1] == q and v > 0:
-                            print(f'({k[2]}, {k[3]}), {v:.3f} | ', end='')
+                            print(f'({g.nodes[k[2]]["name"]}, {g.nodes[k[3]]["name"]}), {v:.3f} | ', end='')
                     print('\n')
 
             ext += total * p[q]

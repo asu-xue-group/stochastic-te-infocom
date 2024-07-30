@@ -17,23 +17,23 @@ def get_graph(alt=False):
 
     if not alt:
         g.add_edge(1, 3, cap=2, cost=1)
-        g.add_edge(2, 4, cap=2, cost=1)
+        g.add_edge(2, 5, cap=2, cost=1)
         g.add_edge(3, 4, cap=3.8, cost=0.8)
-        g.add_edge(3, 5, cap=3.7, cost=0.7)
-        g.add_edge(4, 6, cap=3.6, cost=0.6)
-        g.add_edge(5, 6, cap=3.5, cost=0.5)
-        g.add_edge(5, 7, cap=2, cost=0.5)
-        g.add_edge(6, 8, cap=2, cost=0.5)
+        g.add_edge(3, 5, cap=3.8, cost=2)
+        g.add_edge(4, 6, cap=3.8, cost=3)
+        g.add_edge(5, 6, cap=3.8, cost=0.5)
+        g.add_edge(4, 7, cap=2, cost=1)
+        g.add_edge(6, 8, cap=2, cost=1)
         g.add_edge(1, 7, cap=2, cost=10)
         g.add_edge(2, 8, cap=2, cost=10)
     else:
         g.add_edge(1, 3, cap=2, cost=0)
-        g.add_edge(2, 4, cap=2, cost=0)
+        g.add_edge(2, 5, cap=2, cost=0)
         g.add_edge(3, 4, cap=3.8, cost=0)
         g.add_edge(3, 5, cap=3.8, cost=0)
         g.add_edge(4, 6, cap=3.8, cost=0)
         g.add_edge(5, 6, cap=3.8, cost=0)
-        g.add_edge(5, 7, cap=2, cost=0)
+        g.add_edge(4, 7, cap=2, cost=0)
         g.add_edge(6, 8, cap=2, cost=0)
         g.add_edge(1, 7, cap=2, cost=0)
         g.add_edge(2, 8, cap=2, cost=0)
@@ -44,8 +44,8 @@ def get_graph(alt=False):
     ]
 
     srg = [
-        Srg(((3, 5), ), 0.90),
-        Srg(((4, 6), ), 0.05)
+        Srg(((3, 4), ), 0.90),
+        Srg(((5, 6), ), 0.05)
     ]
 
     g = nx.to_directed(g)

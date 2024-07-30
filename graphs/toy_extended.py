@@ -6,21 +6,21 @@ from graphs.srg_graph import *
 def get_graph():
     g = Graph()
 
-    g.add_node(1)
-    g.add_node(2)
-    g.add_node(3)
-    g.add_node(4)
-    g.add_node(5)
-    g.add_node(6)
-    g.add_node(7)
-    g.add_node(8)
-    g.add_node(9)
-    g.add_node(10)
-    g.add_node(11)
-    g.add_node(12)
-    g.add_node(13)
-    g.add_node(14)
-    g.add_node(15)
+    g.add_node(1, name='s1')
+    g.add_node(2, name='s2')
+    g.add_node(3, name='b')
+    g.add_node(4, name='d')
+    g.add_node(5, name='c')
+    g.add_node(6, name='e')
+    g.add_node(7, name='t1')
+    g.add_node(8, name='t2')
+    g.add_node(9, name='s3')
+    g.add_node(10, name='a')
+    g.add_node(11, name='t3')
+    g.add_node(12, name='g')
+    g.add_node(13, name='h')
+    g.add_node(14, name='f')
+    g.add_node(15, name='ib')
 
     g.add_edge(1, 3, cap=3, cost=1)
     g.add_edge(1, 4, cap=10, cost=0.5)
@@ -49,9 +49,9 @@ def get_graph():
     g = nx.to_directed(g)
 
     commodities = [
-        Commodity(StPair(1, 7), 3, 6),
-        Commodity(StPair(2, 8), 3, 6),
-        Commodity(StPair(9, 11), 3, 8)
+        Commodity(1, 7, 3, 6),
+        Commodity(2, 8, 3, 6),
+        Commodity(9, 11, 3, 8)
     ]
 
     srg = [
@@ -60,4 +60,4 @@ def get_graph():
         Srg(((1, 4),), 0.20)
     ]
 
-    return SrgGraph(g, commodities, srg)
+    return SrgGraph(g, commodities)
