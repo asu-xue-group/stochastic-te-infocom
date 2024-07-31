@@ -26,7 +26,7 @@ def get_graph(n, alpha=None, beta=None, seed=None, rand=None):
         s = int(rand.integers(0, n))
         t = int(rand.integers(0, n))
         if nx.has_path(g, s, t):
-            commodities.append(Commodity(s, t, 2, n*1.5))
+            commodities.append(Commodity(s, t, 2, n))
 
     g = nx.to_directed(g)
     return SrgGraph(g, commodities)

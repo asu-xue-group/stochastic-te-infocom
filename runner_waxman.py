@@ -217,7 +217,7 @@ def main():
         create_csv_file('results.csv', ['n', 'e', 'm', 'seed', 'tvar-gamma', 'tvar-cvar', 'tvar-ext',
                                         'our-gamma', 'our-cvar', 'our-ext', 'time'])
 
-    with ProcessPoolExecutor() as executor:
+    with ProcessPoolExecutor(max_workers=10) as executor:
         executor.map(prun, n, m, seed)
 
 

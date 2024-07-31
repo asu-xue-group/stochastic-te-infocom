@@ -28,6 +28,9 @@ def get_graph(size, seed):
     srg = []
     for f in fails:
         srg.append(Srg(((tuple(f[0]), tuple(f[1])),), rand.random()))
-    g = nx.to_directed(g)
 
-    return SrgGraph(g, commodities, srg)
+    g = nx.to_directed(g)
+    G = SrgGraph(g, commodities)
+    G.srg = srg
+
+    return G
