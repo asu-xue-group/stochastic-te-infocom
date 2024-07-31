@@ -201,10 +201,10 @@ def run(k: int, gamma: float = None, beta: float = None, n: int = 100, m=3, seed
 
 
 def main():
-    prun = partial(run, 3, None, None)
-    seed = list(range(0, 1000)) * 3
-    n = [160] * 3000
-    m = [5] * 3000
+    prun = partial(run, 3, None, 0.9)
+    seed = list(range(0, 100)) * 3
+    n = [40, 80, 160] * 100
+    m = [5] * 300
     # targets = sorted(list(itertools.product(n, m)), key=lambda x: x[1])
 
     if os.path.isfile('results.csv'):
